@@ -2,6 +2,10 @@
 
 A web platform that helps college students find and list short-term summer housing near university campuses. SummerStay connects students who need temporary housing with students looking to hand off their leases during the summer.
 
+## Live Demo
+
+https://summerstay.vercel.app/
+
 ## Screenshots
 
 ### Homepage
