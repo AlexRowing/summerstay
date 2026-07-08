@@ -11,6 +11,7 @@ export type Listing = {
   availability: string;
   description: string;
   amenities: string[];
+  imageUrl: string;
 };
 
 export const listings: Listing[] = [
@@ -27,6 +28,8 @@ export const listings: Listing[] = [
     description:
       "Bright and quiet 2-bedroom apartment a short walk from central campus. Perfect for a summer sublet while the school year is out.",
     amenities: ["Wi-Fi", "Air conditioning", "In-unit laundry", "Parking spot"],
+    imageUrl:
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60",
   },
   {
     id: "2",
@@ -41,6 +44,8 @@ export const listings: Listing[] = [
     description:
       "Fully furnished studio in the heart of Southside. Great for a single student staying for summer research or an internship.",
     amenities: ["Wi-Fi", "Furnished", "Rooftop access"],
+    imageUrl:
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=60",
   },
   {
     id: "3",
@@ -55,6 +60,8 @@ export const listings: Listing[] = [
     description:
       "Whole house sublet, great for a group of friends splitting rent over the summer. Fenced backyard and off-street parking.",
     amenities: ["Wi-Fi", "Backyard", "Dishwasher", "Off-street parking"],
+    imageUrl:
+      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=60",
   },
   {
     id: "4",
@@ -69,6 +76,8 @@ export const listings: Listing[] = [
     description:
       "Recently renovated 1-bedroom close to the Green Line. Ideal for a summer internship in the city.",
     amenities: ["Wi-Fi", "In-unit laundry", "Air conditioning"],
+    imageUrl:
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=60",
   },
   {
     id: "5",
@@ -83,6 +92,8 @@ export const listings: Listing[] = [
     description:
       "One room available in a 4-bedroom sublet. Roommates are friendly and mostly gone during the day for internships.",
     amenities: ["Wi-Fi", "Shared kitchen", "Bike storage"],
+    imageUrl:
+      "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=60",
   },
   {
     id: "6",
@@ -97,6 +108,8 @@ export const listings: Listing[] = [
     description:
       "Peaceful street close to campus, great for summer classes. Includes a small porch and shared laundry in the building.",
     amenities: ["Wi-Fi", "Porch", "Laundry in building"],
+    imageUrl:
+      "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=60",
   },
 ];
 

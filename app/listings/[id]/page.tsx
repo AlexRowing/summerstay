@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getListingById } from "@/app/_lib/listings";
 
@@ -16,8 +17,15 @@ export default async function ListingDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <div className="flex h-56 items-center justify-center rounded-xl bg-gradient-to-br from-sky-200 to-sky-400 text-sky-900 dark:from-sky-900 dark:to-sky-700 dark:text-sky-100">
-        {listing.bedrooms} BR · {listing.bathrooms} BA
+      <div className="relative h-64 overflow-hidden rounded-xl sm:h-96">
+        <Image
+          src={listing.imageUrl}
+          alt={listing.title}
+          fill
+          sizes="(max-width: 768px) 100vw, 768px"
+          className="object-cover"
+          priority
+        />
       </div>
 
       <h1 className="mt-6 text-3xl font-bold">{listing.title}</h1>

@@ -1,26 +1,36 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  Dark mode is opt-in only: `dark:` styles apply only when we add a
+  .dark class to the page ourselves, never from the visitor's OS setting.
+  We'll design a proper dark theme later.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
 
+/*
+  Design tokens — the small set of values that define SummerStay's look.
+  Tailwind turns each --color-* into utility classes we can use anywhere,
+  e.g. bg-brand, text-ink-soft, border-line.
+*/
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Warm coral accent — the one "summer" color, used sparingly */
+  --color-brand: #e05d3d;
+  --color-brand-dark: #c24b2e;
+  --color-brand-soft: #fdeee9;
+
+  /* Warm neutrals: off-white page, white cards, warm-gray text */
+  --color-surface: #faf9f7;
+  --color-card: #ffffff;
+  --color-ink: #1c1917;
+  --color-ink-soft: #78716c;
+  --color-line: #e7e5e4;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }

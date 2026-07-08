@@ -17,7 +17,7 @@ export default function Home() {
         </p>
         <Link
           href="/listings"
-          className="mt-8 inline-block rounded-full bg-sky-600 px-6 py-3 font-medium text-white hover:bg-sky-700"
+          className="mt-8 inline-block rounded-full bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark"
         >
           Browse Listings
         </Link>
