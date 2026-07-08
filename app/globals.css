@@ -1,36 +1,66 @@
 @import "tailwindcss";
 
 /*
-  Dark mode is opt-in only: `dark:` styles apply only when we add a
-  .dark class to the page ourselves, never from the visitor's OS setting.
-  We'll design a proper dark theme later.
+  Dark mode is class-based: `dark:` styles apply only when a .dark class
+  is on the <html> element. next-themes adds/removes that class for us
+  based on the visitor's saved choice (or their OS setting by default).
 */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
-  Design tokens — the small set of values that define SummerStay's look.
-  Tailwind turns each --color-* into utility classes we can use anywhere,
-  e.g. bg-brand, text-ink-soft, border-line.
+  Design tokens — each one has a light value here and a dark value in
+  the .dark block below. Components never reference these hex codes
+  directly; they use classes like bg-card and text-ink, so the whole
+  site switches themes by swapping these variables.
 */
-@theme inline {
+:root {
   /* Warm coral accent — the one "summer" color, used sparingly */
-  --color-brand: #e05d3d;
-  --color-brand-dark: #c24b2e;
-  --color-brand-soft: #fdeee9;
+  --brand: #e05d3d;
+  --brand-dark: #c24b2e;
+  --brand-soft: #fdeee9;
 
   /* Warm neutrals: off-white page, white cards, warm-gray text */
-  --color-surface: #faf9f7;
-  --color-card: #ffffff;
-  --color-ink: #1c1917;
-  --color-ink-soft: #78716c;
-  --color-line: #e7e5e4;
+  --surface: #faf9f7;
+  --card: #ffffff;
+  --ink: #1c1917;
+  --ink-soft: #78716c;
+  --line: #e7e5e4;
+}
+
+.dark {
+  --brand: #e05d3d;
+  --brand-dark: #c24b2e;
+  --brand-soft: #43241c;
+
+  /* Same warm family, inverted: dark stone instead of pure black */
+  --surface: #1c1917;
+  --card: #292524;
+  --ink: #f5f5f4;
+  --ink-soft: #a8a29e;
+  --line: #44403c;
+}
+
+/*
+  Tell Tailwind about the tokens so it generates utility classes
+  (bg-brand, text-ink-soft, border-line, ...) that follow the
+  variables above.
+*/
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--color-surface);
-  color: var(--color-ink);
+  background: var(--surface);
+  color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
