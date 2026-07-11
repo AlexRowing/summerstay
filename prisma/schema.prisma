@@ -29,6 +29,20 @@ model Listing {
   imageUrl         String
   createdAt        DateTime @default(now())
   inquiries        Inquiry[]
+  // Who posted this listing. Nullable because the seeded starter listings have
+  // no owner; listings created through the form after auth get an owner.
+  owner            User?     @relation(fields: [ownerId], references: [id])
+  ownerId          String?
+}
+
+// A registered host/renter. Passwords are stored only as a bcrypt hash.
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime  @default(now())
+  listings     Listing[]
 }
 
 // A message from a prospective subletter about one listing. This is the

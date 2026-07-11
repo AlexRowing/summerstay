@@ -1,6 +1,14 @@
 import Link from "next/link";
+import { auth, signOut } from "@/auth";
 
-export default function Navbar() {
+const brandButton =
+  "whitespace-nowrap rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark";
+const textLink =
+  "text-sm font-medium text-ink-soft transition-colors hover:text-ink";
+
+export default async function Navbar() {
+  const session = await auth();
+
   return (
     /* sticky + backdrop-blur keeps the navbar pinned on top of content
        as you scroll, with a frosted-glass effect. */
@@ -15,20 +23,37 @@ export default function Navbar() {
           </span>
         </Link>
         <div className="flex items-center gap-4 sm:gap-6">
-          {/* Hidden on phones so the bar never wraps; the homepage and
-              footer still link to /listings on small screens. */}
-          <Link
-            href="/listings"
-            className="hidden text-sm font-medium text-ink-soft transition-colors hover:text-ink sm:block"
-          >
+          <Link href="/listings" className={`hidden sm:block ${textLink}`}>
             Browse listings
           </Link>
-          <Link
-            href="/host"
-            className="whitespace-nowrap rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
-          >
-            List your place
-          </Link>
+          {session?.user ? (
+            <>
+              <Link href="/host" className={brandButton}>
+                List your place
+              </Link>
+              {/* Inline server action: signing out clears the session cookie
+                  and returns home. */}
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/" });
+                }}
+              >
+                <button type="submit" className={textLink}>
+                  Log out
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className={textLink}>
+                Log in
+              </Link>
+              <Link href="/host" className={brandButton}>
+                List your place
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>
