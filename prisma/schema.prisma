@@ -28,4 +28,18 @@ model Listing {
   amenities        String
   imageUrl         String
   createdAt        DateTime @default(now())
+  inquiries        Inquiry[]
+}
+
+// A message from a prospective subletter about one listing. This is the
+// honest, scoped version of "contact host": it records interest; it is not a
+// full messaging system.
+model Inquiry {
+  id        String   @id @default(cuid())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId String
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
 }

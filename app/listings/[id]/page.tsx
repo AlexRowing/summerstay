@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import ContactForm from "@/app/_components/ContactForm";
 import { getListingById } from "@/app/_lib/listings";
 
 // In Next.js 16, `params` is a Promise, so it must be awaited before use.
@@ -103,15 +104,7 @@ export default async function ListingDetailPage({
               </span>
             </p>
             <p className="mt-1 text-sm text-ink-soft">{listing.availability}</p>
-            <button
-              type="button"
-              className="mt-5 w-full rounded-full bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark"
-            >
-              Contact host
-            </button>
-            <p className="mt-3 text-center text-xs text-ink-soft">
-              Messaging coming soon
-            </p>
+            <ContactForm listingId={listing.id} />
           </div>
         </aside>
       </div>
