@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // One apartment listing. Mirrors the Listing type the app already uses.
@@ -22,8 +22,9 @@ model Listing {
   distanceToCampus String
   availability     String
   description      String
-  // SQLite has no array column, so the string[] is stored as a JSON
-  // string here and parsed back into an array in app/_lib/listings.ts.
+  // Stored as a JSON string and parsed in app/_lib/listings.ts. Kept as-is
+  // through the SQLite->Postgres migration to keep the schema identical; a
+  // later change can switch this to a native Postgres text[] array.
   amenities        String
   imageUrl         String
   createdAt        DateTime @default(now())

@@ -47,7 +47,3 @@ settings.local.json
 .vscode/
 
 /app/generated/prisma
-
-# prisma sqlite database (generated locally)
-/dev.db
-/dev.db-journal

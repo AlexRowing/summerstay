@@ -1,4 +1,4 @@
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/app/generated/prisma/client";
 
 /*
@@ -14,10 +14,10 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Prisma 7 connects through a driver adapter; better-sqlite3 reads the
-// local SQLite file named in DATABASE_URL (.env, auto-loaded by Next.js).
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./dev.db",
+// Prisma 7 connects through a driver adapter; PrismaPg connects to the
+// Postgres database named in DATABASE_URL (.env, auto-loaded by Next.js).
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
 });
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });

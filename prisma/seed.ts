@@ -1,12 +1,11 @@
 import "dotenv/config";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../app/generated/prisma/client";
 
-// Prisma 7 talks to the database through a driver adapter. For a local
-// SQLite file that's better-sqlite3, pointed at the DATABASE_URL from .env.
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./dev.db",
-});
+// Prisma 7 talks to the database through a driver adapter; PrismaPg connects
+// to the Postgres database named in DATABASE_URL. dotenv (above) loads .env
+// because tsx does not auto-load it.
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 // The starter apartments. `amenities` is stored as a JSON string because
