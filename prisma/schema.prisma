@@ -1,0 +1,30 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// One apartment listing. Mirrors the Listing type the app already uses.
+model Listing {
+  id               String   @id @default(cuid())
+  title            String
+  city             String
+  neighborhood     String
+  pricePerMonth    Int
+  bedrooms         Int
+  bathrooms        Int
+  distanceToCampus String
+  availability     String
+  description      String
+  // SQLite has no array column, so the string[] is stored as a JSON
+  // string here and parsed back into an array in app/_lib/listings.ts.
+  amenities        String
+  imageUrl         String
+  createdAt        DateTime @default(now())
+}

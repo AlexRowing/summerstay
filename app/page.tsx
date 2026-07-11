@@ -1,6 +1,6 @@
 import Link from "next/link";
 import ListingCard from "@/app/_components/ListingCard";
-import { listings } from "@/app/_lib/listings";
+import { getListings } from "@/app/_lib/listings";
 
 const steps = [
   {
@@ -20,7 +20,8 @@ const steps = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const listings = await getListings();
   const featuredListings = listings.slice(0, 3);
 
   return (

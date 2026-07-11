@@ -1,7 +1,8 @@
 import ListingCard from "@/app/_components/ListingCard";
-import { listings } from "@/app/_lib/listings";
+import { getListings } from "@/app/_lib/listings";
 
-export default function ListingsPage() {
+export default async function ListingsPage() {
+  const listings = await getListings();
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
       <h1 className="text-3xl font-bold tracking-tight">Browse listings</h1>

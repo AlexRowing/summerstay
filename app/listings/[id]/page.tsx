@@ -10,7 +10,7 @@ export default async function ListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const listing = getListingById(id);
+  const listing = await getListingById(id);
 
   if (!listing) {
     notFound();

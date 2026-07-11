@@ -1,4 +1,8 @@
-// Fake apartment data. Later this will come from a real database instead.
+import { prisma } from "@/app/_lib/db";
+import type { Listing as ListingRow } from "@/app/generated/prisma/client";
+
+// The shape the rest of the app uses. Same as before the database existed,
+// so pages and components didn't need to change how they read a listing.
 export type Listing = {
   id: string;
   title: string;
@@ -14,105 +18,36 @@ export type Listing = {
   imageUrl: string;
 };
 
-export const listings: Listing[] = [
-  {
-    id: "1",
-    title: "Sunny 2BR Near Central Campus",
-    city: "Ann Arbor, MI",
-    neighborhood: "Kerrytown",
-    pricePerMonth: 950,
-    bedrooms: 2,
-    bathrooms: 1,
-    distanceToCampus: "0.4 miles from campus",
-    availability: "June 1 - Aug 20",
-    description:
-      "Bright and quiet 2-bedroom apartment a short walk from central campus. Perfect for a summer sublet while the school year is out.",
-    amenities: ["Wi-Fi", "Air conditioning", "In-unit laundry", "Parking spot"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=60",
-  },
-  {
-    id: "2",
-    title: "Cozy Studio Steps from Sproul Plaza",
-    city: "Berkeley, CA",
-    neighborhood: "Southside",
-    pricePerMonth: 1400,
-    bedrooms: 1,
-    bathrooms: 1,
-    distanceToCampus: "0.1 miles from campus",
-    availability: "May 15 - Aug 15",
-    description:
-      "Fully furnished studio in the heart of Southside. Great for a single student staying for summer research or an internship.",
-    amenities: ["Wi-Fi", "Furnished", "Rooftop access"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=60",
-  },
-  {
-    id: "3",
-    title: "3BR House with Backyard",
-    city: "Austin, TX",
-    neighborhood: "West Campus",
-    pricePerMonth: 1800,
-    bedrooms: 3,
-    bathrooms: 2,
-    distanceToCampus: "0.6 miles from campus",
-    availability: "June 1 - Aug 31",
-    description:
-      "Whole house sublet, great for a group of friends splitting rent over the summer. Fenced backyard and off-street parking.",
-    amenities: ["Wi-Fi", "Backyard", "Dishwasher", "Off-street parking"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=60",
-  },
-  {
-    id: "4",
-    title: "Modern 1BR Near the T",
-    city: "Boston, MA",
-    neighborhood: "Allston",
-    pricePerMonth: 1600,
-    bedrooms: 1,
-    bathrooms: 1,
-    distanceToCampus: "0.8 miles from campus",
-    availability: "May 20 - Aug 25",
-    description:
-      "Recently renovated 1-bedroom close to the Green Line. Ideal for a summer internship in the city.",
-    amenities: ["Wi-Fi", "In-unit laundry", "Air conditioning"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=60",
-  },
-  {
-    id: "5",
-    title: "Shared 4BR Near State Street",
-    city: "Madison, WI",
-    neighborhood: "State Street",
-    pricePerMonth: 700,
-    bedrooms: 4,
-    bathrooms: 2,
-    distanceToCampus: "0.3 miles from campus",
-    availability: "June 1 - Aug 15",
-    description:
-      "One room available in a 4-bedroom sublet. Roommates are friendly and mostly gone during the day for internships.",
-    amenities: ["Wi-Fi", "Shared kitchen", "Bike storage"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=60",
-  },
-  {
-    id: "6",
-    title: "Quiet 2BR Near Franklin Street",
-    city: "Chapel Hill, NC",
-    neighborhood: "Northside",
-    pricePerMonth: 1100,
-    bedrooms: 2,
-    bathrooms: 1,
-    distanceToCampus: "0.5 miles from campus",
-    availability: "May 10 - Aug 10",
-    description:
-      "Peaceful street close to campus, great for summer classes. Includes a small porch and shared laundry in the building.",
-    amenities: ["Wi-Fi", "Porch", "Laundry in building"],
-    imageUrl:
-      "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=1200&q=60",
-  },
-];
+// The one place that translates a raw database row into a Listing. The DB
+// stores amenities as a JSON string (SQLite has no array column), so we parse
+// it back into an array here and drop DB-only fields like createdAt.
+function toListing(row: ListingRow): Listing {
+  return {
+    id: row.id,
+    title: row.title,
+    city: row.city,
+    neighborhood: row.neighborhood,
+    pricePerMonth: row.pricePerMonth,
+    bedrooms: row.bedrooms,
+    bathrooms: row.bathrooms,
+    distanceToCampus: row.distanceToCampus,
+    availability: row.availability,
+    description: row.description,
+    amenities: JSON.parse(row.amenities) as string[],
+    imageUrl: row.imageUrl,
+  };
+}
 
-export function getListingById(id: string): Listing | undefined {
-  return listings.find((listing) => listing.id === id);
+// Every listing, newest first.
+export async function getListings(): Promise<Listing[]> {
+  const rows = await prisma.listing.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map(toListing);
+}
+
+// A single listing, or null if no listing has that id.
+export async function getListingById(id: string): Promise<Listing | null> {
+  const row = await prisma.listing.findUnique({ where: { id } });
+  return row ? toListing(row) : null;
 }
