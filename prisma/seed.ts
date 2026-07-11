@@ -8,10 +8,9 @@ import { PrismaClient } from "../app/generated/prisma/client";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-// The starter apartments. `amenities` is stored as a JSON string because
-// SQLite has no array column; app/_lib/listings.ts parses it back to an array.
-// `createdAt` is set explicitly and increasing so newest-first ordering is
-// stable across seeds.
+// The starter apartments. `amenities` is stored as a JSON string;
+// app/_lib/listings.ts parses it back to an array. `createdAt` is set
+// explicitly and increasing so newest-first ordering is stable across seeds.
 const base = new Date("2026-01-01T00:00:00Z").getTime();
 
 const seedListings = [

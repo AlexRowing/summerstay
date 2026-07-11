@@ -19,8 +19,8 @@ export type Listing = {
 };
 
 // The one place that translates a raw database row into a Listing. The DB
-// stores amenities as a JSON string (SQLite has no array column), so we parse
-// it back into an array here and drop DB-only fields like createdAt.
+// stores amenities as a JSON string, so we parse it back into an array here
+// and drop DB-only fields like createdAt.
 function toListing(row: ListingRow): Listing {
   return {
     id: row.id,
