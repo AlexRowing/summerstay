@@ -16,44 +16,51 @@ function safeImageUrl(raw: string): string {
   return raw.startsWith("https://images.unsplash.com") ? raw : DEFAULT_IMAGE;
 }
 
+// What the host form renders back: an error message, or nothing on success
+// (a successful submit redirects instead of returning).
+export type HostFormState = { error?: string };
+
 /*
-  A Server Action: this runs on the server when the host submits the form.
-  The form passes its fields as FormData. We read them, do light validation,
-  save a new row, refresh the pages that list apartments, then send the host
-  to their new listing.
+  Server Action for the "List your place" form. useActionState calls it as
+  (previousState, formData). On bad input we return an error string that the
+  form shows inline; on success we save the row and redirect to the new listing.
 */
-export async function createListing(formData: FormData) {
-  // Read text fields, trimming whitespace.
+export async function createListing(
+  _prev: HostFormState,
+  formData: FormData,
+): Promise<HostFormState> {
   const text = (name: string) => String(formData.get(name) ?? "").trim();
-  // Read number fields as whole numbers (the DB columns are integers).
-  const number = (name: string) => Math.round(Number(formData.get(name)));
 
   const title = text("title");
   const city = text("city");
   const neighborhood = text("neighborhood");
-  const pricePerMonth = number("pricePerMonth");
-  const bedrooms = number("bedrooms");
-  const bathrooms = number("bathrooms");
   const distanceToCampus = text("distanceToCampus");
   const availability = text("availability");
   const description = text("description");
+  const priceRaw = text("pricePerMonth");
+  const bedroomsRaw = text("bedrooms");
+  const bathroomsRaw = text("bathrooms");
 
-  // The form collects amenities as a comma-separated string; split it into a
-  // clean array (drop blanks) to match how listings store amenities.
-  const amenities = text("amenities")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  const imageUrl = safeImageUrl(text("imageUrl"));
-
-  // Safety net behind the form's own required/number validation. If bad data
-  // still arrives (e.g. the action is called directly), stop with a clear
-  // error instead of writing a broken listing.
-  if (!title || !city || !neighborhood || !distanceToCampus || !availability || !description) {
-    throw new Error("Please fill in all required fields.");
-  }
   if (
+    !title ||
+    !city ||
+    !neighborhood ||
+    !distanceToCampus ||
+    !availability ||
+    !description
+  ) {
+    return { error: "Please fill in every required field." };
+  }
+
+  // Reject empty or non-numeric values explicitly. Number("") is 0, which
+  // would otherwise slip through as a valid price/count.
+  const pricePerMonth = Number(priceRaw);
+  const bedrooms = Number(bedroomsRaw);
+  const bathrooms = Number(bathroomsRaw);
+  if (
+    priceRaw === "" ||
+    bedroomsRaw === "" ||
+    bathroomsRaw === "" ||
     !Number.isFinite(pricePerMonth) ||
     !Number.isFinite(bedrooms) ||
     !Number.isFinite(bathrooms) ||
@@ -61,26 +68,31 @@ export async function createListing(formData: FormData) {
     bedrooms < 0 ||
     bathrooms < 0
   ) {
-    throw new Error("Price, bedrooms, and bathrooms must be valid numbers.");
+    return { error: "Price, bedrooms, and bathrooms must be valid numbers." };
   }
+
+  const amenities = text("amenities")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
   const listing = await prisma.listing.create({
     data: {
       title,
       city,
       neighborhood,
-      pricePerMonth,
-      bedrooms,
-      bathrooms,
+      pricePerMonth: Math.round(pricePerMonth),
+      bedrooms: Math.round(bedrooms),
+      bathrooms: Math.round(bathrooms),
       distanceToCampus,
       availability,
       description,
       amenities: JSON.stringify(amenities),
-      imageUrl,
+      imageUrl: safeImageUrl(text("imageUrl")),
     },
   });
 
-  // Tell Next.js the listing pages are now stale so the new one shows up.
+  // Refresh the pages that list apartments so the new one shows up.
   revalidatePath("/");
   revalidatePath("/listings");
 
