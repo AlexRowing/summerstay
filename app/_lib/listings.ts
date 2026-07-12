@@ -16,6 +16,7 @@ export type Listing = {
   description: string;
   amenities: string[];
   imageUrl: string;
+  ownerId: string | null;
 };
 
 // The one place that translates a raw database row into a Listing. The DB
@@ -35,6 +36,7 @@ function toListing(row: ListingRow): Listing {
     description: row.description,
     amenities: JSON.parse(row.amenities) as string[],
     imageUrl: row.imageUrl,
+    ownerId: row.ownerId,
   };
 }
 

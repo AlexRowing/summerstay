@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import ContactForm from "@/app/_components/ContactForm";
+import DeleteListingButton from "@/app/_components/DeleteListingButton";
 import { getListingById } from "@/app/_lib/listings";
 
 // In Next.js 16, `params` is a Promise, so it must be awaited before use.
@@ -16,6 +18,9 @@ export default async function ListingDetailPage({
   if (!listing) {
     notFound();
   }
+
+  const session = await auth();
+  const isOwner = !!session?.user && session.user.id === listing.ownerId;
 
   // The key facts, kept as data so the markup below stays a simple loop.
   const facts = [
@@ -104,7 +109,19 @@ export default async function ListingDetailPage({
               </span>
             </p>
             <p className="mt-1 text-sm text-ink-soft">{listing.availability}</p>
-            <ContactForm listingId={listing.id} />
+            {isOwner ? (
+              <div className="mt-5 space-y-3">
+                <Link
+                  href={`/listings/${listing.id}/edit`}
+                  className="block w-full rounded-full border border-line bg-card px-6 py-3 text-center font-medium transition-colors hover:border-ink-soft"
+                >
+                  Edit listing
+                </Link>
+                <DeleteListingButton id={listing.id} />
+              </div>
+            ) : (
+              <ContactForm listingId={listing.id} />
+            )}
           </div>
         </aside>
       </div>

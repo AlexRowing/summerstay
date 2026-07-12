@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/app/_lib/db";
 
 // Used when the host leaves the photo field blank, or pastes a URL we can't
@@ -16,19 +17,30 @@ function safeImageUrl(raw: string): string {
   return raw.startsWith("https://images.unsplash.com") ? raw : DEFAULT_IMAGE;
 }
 
-// What the host form renders back: an error message, or nothing on success
+// What the listing form renders back: an error message, or nothing on success
 // (a successful submit redirects instead of returning).
 export type HostFormState = { error?: string };
 
-/*
-  Server Action for the "List your place" form. useActionState calls it as
-  (previousState, formData). On bad input we return an error string that the
-  form shows inline; on success we save the row and redirect to the new listing.
-*/
-export async function createListing(
-  _prev: HostFormState,
+// The columns a listing form writes. Shared by create and update.
+type ListingFields = {
+  title: string;
+  city: string;
+  neighborhood: string;
+  pricePerMonth: number;
+  bedrooms: number;
+  bathrooms: number;
+  distanceToCampus: string;
+  availability: string;
+  description: string;
+  amenities: string;
+  imageUrl: string;
+};
+
+// Read + validate the form fields once, so create and update stay in sync.
+// Returns either an error message or the clean data to write.
+function readListingFields(
   formData: FormData,
-): Promise<HostFormState> {
+): { error: string } | { data: ListingFields } {
   const text = (name: string) => String(formData.get(name) ?? "").trim();
 
   const title = text("title");
@@ -37,9 +49,6 @@ export async function createListing(
   const distanceToCampus = text("distanceToCampus");
   const availability = text("availability");
   const description = text("description");
-  const priceRaw = text("pricePerMonth");
-  const bedroomsRaw = text("bedrooms");
-  const bathroomsRaw = text("bathrooms");
 
   if (
     !title ||
@@ -52,8 +61,9 @@ export async function createListing(
     return { error: "Please fill in every required field." };
   }
 
-  // Reject empty or non-numeric values explicitly. Number("") is 0, which
-  // would otherwise slip through as a valid price/count.
+  const priceRaw = text("pricePerMonth");
+  const bedroomsRaw = text("bedrooms");
+  const bathroomsRaw = text("bathrooms");
   const pricePerMonth = Number(priceRaw);
   const bedrooms = Number(bedroomsRaw);
   const bathrooms = Number(bathroomsRaw);
@@ -76,7 +86,7 @@ export async function createListing(
     .map((item) => item.trim())
     .filter(Boolean);
 
-  const listing = await prisma.listing.create({
+  return {
     data: {
       title,
       city,
@@ -90,12 +100,74 @@ export async function createListing(
       amenities: JSON.stringify(amenities),
       imageUrl: safeImageUrl(text("imageUrl")),
     },
+  };
+}
+
+// Create a new listing owned by the logged-in user.
+export async function createListing(
+  _prev: HostFormState,
+  formData: FormData,
+): Promise<HostFormState> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "You must be logged in to post a listing." };
+  }
+
+  const parsed = readListingFields(formData);
+  if ("error" in parsed) return { error: parsed.error };
+
+  const listing = await prisma.listing.create({
+    data: { ...parsed.data, ownerId: session.user.id },
   });
 
-  // Refresh the pages that list apartments so the new one shows up.
   revalidatePath("/");
   revalidatePath("/listings");
-
-  // Send the host to their freshly created listing.
   redirect(`/listings/${listing.id}`);
+}
+
+// Update an existing listing — only the user who owns it may do so.
+export async function updateListing(
+  _prev: HostFormState,
+  formData: FormData,
+): Promise<HostFormState> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "You must be logged in." };
+  }
+
+  const id = String(formData.get("id") ?? "");
+  const existing = await prisma.listing.findUnique({ where: { id } });
+  if (!existing) return { error: "That listing no longer exists." };
+  if (existing.ownerId !== session.user.id) {
+    return { error: "You can only edit your own listings." };
+  }
+
+  const parsed = readListingFields(formData);
+  if ("error" in parsed) return { error: parsed.error };
+
+  await prisma.listing.update({ where: { id }, data: parsed.data });
+
+  revalidatePath("/");
+  revalidatePath("/listings");
+  revalidatePath(`/listings/${id}`);
+  redirect(`/listings/${id}`);
+}
+
+// Delete a listing — only the owner may do so. Throws (rather than returning)
+// on an unauthorized attempt, since the UI only ever shows delete to owners.
+export async function deleteListing(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not authenticated.");
+
+  const id = String(formData.get("id") ?? "");
+  const existing = await prisma.listing.findUnique({ where: { id } });
+  if (!existing || existing.ownerId !== session.user.id) {
+    throw new Error("You are not allowed to delete this listing.");
+  }
+
+  await prisma.listing.delete({ where: { id } });
+
+  revalidatePath("/");
+  revalidatePath("/listings");
+  redirect("/listings");
 }
