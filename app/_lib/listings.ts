@@ -1,5 +1,8 @@
 import { prisma } from "@/app/_lib/db";
-import type { Listing as ListingRow } from "@/app/generated/prisma/client";
+import type {
+  Listing as ListingRow,
+  Prisma,
+} from "@/app/generated/prisma/client";
 
 // The shape the rest of the app uses. Same as before the database existed,
 // so pages and components didn't need to change how they read a listing.
@@ -40,9 +43,30 @@ function toListing(row: ListingRow): Listing {
   };
 }
 
-// Every listing, newest first.
-export async function getListings(): Promise<Listing[]> {
+// Optional filters for the browse page, all combined with AND.
+export type ListingFilters = {
+  city?: string;
+  maxPrice?: number;
+  bedrooms?: number;
+};
+
+// Every listing (newest first), optionally narrowed by the search filters.
+export async function getListings(
+  filters: ListingFilters = {},
+): Promise<Listing[]> {
+  const where: Prisma.ListingWhereInput = {};
+  if (filters.city) {
+    where.city = { contains: filters.city, mode: "insensitive" };
+  }
+  if (filters.maxPrice !== undefined) {
+    where.pricePerMonth = { lte: filters.maxPrice };
+  }
+  if (filters.bedrooms !== undefined) {
+    where.bedrooms = { gte: filters.bedrooms };
+  }
+
   const rows = await prisma.listing.findMany({
+    where,
     orderBy: { createdAt: "desc" },
   });
   return rows.map(toListing);
