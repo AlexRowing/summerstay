@@ -1,20 +1,37 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createInquiry, type InquiryState } from "@/app/listings/actions";
+import { collectFieldErrors } from "@/app/_lib/form-validation";
 
 const initialState: InquiryState = { status: "idle" };
-
 const fieldClass =
   "mt-1 w-full rounded-lg border border-line bg-card px-3 py-2 text-sm outline-none focus:border-ink-soft";
+const errorClass = "mt-1 text-sm text-red-600 dark:text-red-400";
 
 export default function ContactForm({ listingId }: { listingId: string }) {
-  // useActionState wires the form to the Server Action and hands back the
-  // returned state plus a `pending` flag while the request is in flight.
   const [state, formAction, pending] = useActionState(
     createInquiry,
     initialState,
   );
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const found = collectFieldErrors(e.currentTarget);
+    if (Object.keys(found).length > 0) {
+      e.preventDefault();
+      setErrors(found);
+    }
+  }
+
+  function clearError(name: string) {
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  }
 
   if (state.status === "sent") {
     return (
@@ -28,7 +45,7 @@ export default function ContactForm({ listingId }: { listingId: string }) {
   }
 
   return (
-    <form action={formAction} className="mt-5 space-y-3">
+    <form action={formAction} onSubmit={handleSubmit} noValidate className="mt-5 space-y-3">
       <input type="hidden" name="listingId" value={listingId} />
       <div>
         <label htmlFor="name" className="sr-only">
@@ -39,9 +56,12 @@ export default function ContactForm({ listingId }: { listingId: string }) {
           name="name"
           type="text"
           required
+          data-label="Name"
           placeholder="Your name"
           className={fieldClass}
+          onInput={() => clearError("name")}
         />
+        {errors.name && <p className={errorClass}>{errors.name}</p>}
       </div>
       <div>
         <label htmlFor="email" className="sr-only">
@@ -52,9 +72,12 @@ export default function ContactForm({ listingId }: { listingId: string }) {
           name="email"
           type="email"
           required
+          data-label="Email"
           placeholder="you@school.edu"
           className={fieldClass}
+          onInput={() => clearError("email")}
         />
+        {errors.email && <p className={errorClass}>{errors.email}</p>}
       </div>
       <div>
         <label htmlFor="message" className="sr-only">
@@ -65,12 +88,15 @@ export default function ContactForm({ listingId }: { listingId: string }) {
           name="message"
           required
           rows={3}
+          data-label="Message"
           placeholder="Hi! I'm interested in subletting your place..."
           className={fieldClass}
+          onInput={() => clearError("message")}
         />
+        {errors.message && <p className={errorClass}>{errors.message}</p>}
       </div>
       {state.status === "error" && (
-        <p className="text-sm text-red-600">{state.error}</p>
+        <p className={errorClass}>{state.error}</p>
       )}
       <button
         type="submit"

@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { HostFormState } from "@/app/host/actions";
 import type { Listing } from "@/app/_lib/listings";
+import { collectFieldErrors } from "@/app/_lib/form-validation";
 
 type ListingAction = (
   prev: HostFormState,
@@ -12,6 +13,7 @@ type ListingAction = (
 const inputClass =
   "mt-1 w-full rounded-lg border border-line bg-card px-3 py-2 text-sm outline-none focus:border-ink-soft";
 const labelClass = "block text-sm font-medium";
+const errorClass = "mt-1 text-sm text-red-600 dark:text-red-400";
 
 // One form for both "create" and "edit". Pass the matching action; pass an
 // existing `listing` to prefill the fields (edit) or omit it (create).
@@ -25,9 +27,35 @@ export default function ListingForm({
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const found = collectFieldErrors(e.currentTarget);
+    if (Object.keys(found).length > 0) {
+      e.preventDefault();
+      setErrors(found);
+    }
+  }
+
+  function clearError(name: string) {
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  }
+
+  const err = (name: string) =>
+    errors[name] ? <p className={errorClass}>{errors[name]}</p> : null;
 
   return (
-    <form action={formAction} className="mt-8 space-y-5">
+    <form
+      action={formAction}
+      onSubmit={handleSubmit}
+      noValidate
+      className="mt-8 space-y-5"
+    >
       {listing && <input type="hidden" name="id" value={listing.id} />}
 
       <div>
@@ -39,10 +67,13 @@ export default function ListingForm({
           name="title"
           type="text"
           required
+          data-label="Title"
           defaultValue={listing?.title}
           placeholder="Sunny 2BR near central campus"
           className={inputClass}
+          onInput={() => clearError("title")}
         />
+        {err("title")}
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -55,10 +86,13 @@ export default function ListingForm({
             name="city"
             type="text"
             required
+            data-label="City"
             defaultValue={listing?.city}
             placeholder="Ann Arbor, MI"
             className={inputClass}
+            onInput={() => clearError("city")}
           />
+          {err("city")}
         </div>
         <div>
           <label htmlFor="neighborhood" className={labelClass}>
@@ -69,10 +103,13 @@ export default function ListingForm({
             name="neighborhood"
             type="text"
             required
+            data-label="Neighborhood"
             defaultValue={listing?.neighborhood}
             placeholder="Kerrytown"
             className={inputClass}
+            onInput={() => clearError("neighborhood")}
           />
+          {err("neighborhood")}
         </div>
       </div>
 
@@ -87,10 +124,13 @@ export default function ListingForm({
             type="number"
             min="0"
             required
+            data-label="Price"
             defaultValue={listing?.pricePerMonth}
             placeholder="950"
             className={inputClass}
+            onInput={() => clearError("pricePerMonth")}
           />
+          {err("pricePerMonth")}
         </div>
         <div>
           <label htmlFor="bedrooms" className={labelClass}>
@@ -102,10 +142,13 @@ export default function ListingForm({
             type="number"
             min="0"
             required
+            data-label="Bedrooms"
             defaultValue={listing?.bedrooms}
             placeholder="2"
             className={inputClass}
+            onInput={() => clearError("bedrooms")}
           />
+          {err("bedrooms")}
         </div>
         <div>
           <label htmlFor="bathrooms" className={labelClass}>
@@ -117,10 +160,13 @@ export default function ListingForm({
             type="number"
             min="0"
             required
+            data-label="Bathrooms"
             defaultValue={listing?.bathrooms}
             placeholder="1"
             className={inputClass}
+            onInput={() => clearError("bathrooms")}
           />
+          {err("bathrooms")}
         </div>
       </div>
 
@@ -134,10 +180,13 @@ export default function ListingForm({
             name="distanceToCampus"
             type="text"
             required
+            data-label="Distance to campus"
             defaultValue={listing?.distanceToCampus}
             placeholder="0.4 miles from campus"
             className={inputClass}
+            onInput={() => clearError("distanceToCampus")}
           />
+          {err("distanceToCampus")}
         </div>
         <div>
           <label htmlFor="availability" className={labelClass}>
@@ -148,10 +197,13 @@ export default function ListingForm({
             name="availability"
             type="text"
             required
+            data-label="Availability"
             defaultValue={listing?.availability}
             placeholder="June 1 - Aug 20"
             className={inputClass}
+            onInput={() => clearError("availability")}
           />
+          {err("availability")}
         </div>
       </div>
 
@@ -164,10 +216,13 @@ export default function ListingForm({
           name="description"
           required
           rows={4}
+          data-label="Description"
           defaultValue={listing?.description}
           placeholder="Tell subletters about the place, the neighborhood, and who it's good for."
           className={inputClass}
+          onInput={() => clearError("description")}
         />
+        {err("description")}
       </div>
 
       <div>
@@ -195,17 +250,20 @@ export default function ListingForm({
           id="imageUrl"
           name="imageUrl"
           type="url"
+          data-label="Photo URL"
           defaultValue={listing?.imageUrl}
           placeholder="https://images.unsplash.com/..."
           className={inputClass}
+          onInput={() => clearError("imageUrl")}
         />
+        {err("imageUrl")}
         <p className="mt-1 text-xs text-ink-soft">
           Optional. Paste an Unsplash image URL, or leave blank for a
           placeholder photo.
         </p>
       </div>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state.error && <p className={errorClass}>{state.error}</p>}
 
       <button
         type="submit"
