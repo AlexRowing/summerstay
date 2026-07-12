@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
+import UserMenu from "@/app/_components/UserMenu";
 
 const brandButton =
   "whitespace-nowrap rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark";
@@ -31,18 +32,10 @@ export default async function Navbar() {
               <Link href="/host" className={brandButton}>
                 List your place
               </Link>
-              {/* Inline server action: signing out clears the session cookie
-                  and returns home. */}
-              <form
-                action={async () => {
-                  "use server";
-                  await signOut({ redirectTo: "/" });
-                }}
-              >
-                <button type="submit" className={textLink}>
-                  Log out
-                </button>
-              </form>
+              <UserMenu
+                name={session.user.name ?? null}
+                email={session.user.email ?? ""}
+              />
             </>
           ) : (
             <>

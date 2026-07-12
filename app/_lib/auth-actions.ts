@@ -3,11 +3,16 @@
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { prisma } from "@/app/_lib/db";
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 
 // What the login/signup forms render back: an error message, or nothing on
 // success (a successful auth redirects instead of returning).
 export type AuthState = { error?: string };
+
+// Sign the current user out and return home. Used by the navbar user menu.
+export async function signOutAction() {
+  await signOut({ redirectTo: "/" });
+}
 
 // Log an existing user in. signIn throws a redirect on success (which must
 // propagate) and an AuthError on bad credentials (which we turn into a

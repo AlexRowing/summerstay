@@ -77,3 +77,12 @@ export async function getListingById(id: string): Promise<Listing | null> {
   const row = await prisma.listing.findUnique({ where: { id } });
   return row ? toListing(row) : null;
 }
+
+// Listings owned by one user, newest first (for the "My listings" page).
+export async function getListingsByOwner(ownerId: string): Promise<Listing[]> {
+  const rows = await prisma.listing.findMany({
+    where: { ownerId },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map(toListing);
+}
