@@ -16,8 +16,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SummerStay",
-  description: "Find or sublet a college apartment for the summer.",
+  metadataBase: new URL("https://summerstay.vercel.app"),
+  title: {
+    default: "SummerStay — Summer sublets near campus",
+    template: "%s · SummerStay",
+  },
+  description:
+    "Find a summer sublet near campus, or list your place for the summer. A student-to-student marketplace.",
+  openGraph: {
+    title: "SummerStay — Summer sublets near campus",
+    description:
+      "Find a summer sublet near campus, or list your place for the summer.",
+    url: "https://summerstay.vercel.app",
+    siteName: "SummerStay",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SummerStay — Summer sublets near campus",
+    description:
+      "Find a summer sublet near campus, or list your place for the summer.",
+  },
 };
 
 export default function RootLayout({

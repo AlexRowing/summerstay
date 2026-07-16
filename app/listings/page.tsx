@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import ListingCard from "@/app/_components/ListingCard";
 import { getListings } from "@/app/_lib/listings";
+
+export const metadata: Metadata = { title: "Browse listings" };
 
 const fieldClass =
   "rounded-lg border border-line bg-card px-3 py-2 text-sm outline-none focus:border-ink-soft";

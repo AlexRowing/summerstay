@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import ListingForm from "@/app/_components/ListingForm";
 import { createListing } from "@/app/host/actions";
+
+export const metadata: Metadata = { title: "List your place" };
 
 export default async function HostPage() {
   // Posting requires an account; send signed-out visitors to log in first.

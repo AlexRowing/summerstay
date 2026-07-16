@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/app/_lib/db";
+
+export const metadata: Metadata = { title: "Account" };
 
 export default async function AccountPage() {
   const session = await auth();

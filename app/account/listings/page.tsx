@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import ListingCard from "@/app/_components/ListingCard";
 import { getListingsByOwner } from "@/app/_lib/listings";
+
+export const metadata: Metadata = { title: "My listings" };
 
 export default async function MyListingsPage() {
   const session = await auth();

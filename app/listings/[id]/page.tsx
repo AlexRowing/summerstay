@@ -6,6 +6,16 @@ import ContactForm from "@/app/_components/ContactForm";
 import DeleteListingButton from "@/app/_components/DeleteListingButton";
 import { getListingById } from "@/app/_lib/listings";
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const listing = await getListingById(id);
+  return { title: listing ? listing.title : "Listing not found" };
+}
+
 // In Next.js 16, `params` is a Promise, so it must be awaited before use.
 export default async function ListingDetailPage({
   params,
