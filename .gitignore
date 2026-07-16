@@ -47,3 +47,6 @@ settings.local.json
 .vscode/
 
 /app/generated/prisma
+
+# impeccable skill working files
+.impeccable/
