@@ -64,3 +64,15 @@ body {
   color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/*
+  A consistent keyboard-focus ring on every interactive element, in the brand
+  color. :focus-visible shows it for keyboard navigation only, not mouse
+  clicks. Left unlayered so it wins over the `outline-none` utility on inputs.
+*/
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline-width: 2px;
+  outline-style: solid;
+  outline-color: var(--brand);
+  outline-offset: 2px;
+}
