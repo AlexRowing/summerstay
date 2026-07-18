@@ -19,20 +19,42 @@ export default function Footer() {
             hand off your lease for the summer.
           </p>
         </div>
-        <nav className="flex flex-col gap-3 text-sm sm:items-end">
-          <Link
-            href="/listings"
-            className="text-ink-soft transition-colors hover:text-ink"
-          >
-            Browse listings
-          </Link>
-          <Link
-            href="/host"
-            className="text-ink-soft transition-colors hover:text-ink"
-          >
-            List your place
-          </Link>
-        </nav>
+        <div className="flex flex-col gap-8 sm:flex-row sm:gap-16">
+          <nav className="flex flex-col gap-3 text-sm">
+            <Link
+              href="/listings"
+              className="text-ink-soft transition-colors hover:text-ink"
+            >
+              Browse listings
+            </Link>
+            <Link
+              href="/host"
+              className="text-ink-soft transition-colors hover:text-ink"
+            >
+              List your place
+            </Link>
+          </nav>
+          <nav className="flex flex-col gap-3 text-sm">
+            <Link
+              href="/privacy"
+              className="text-ink-soft transition-colors hover:text-ink"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms"
+              className="text-ink-soft transition-colors hover:text-ink"
+            >
+              Terms of Service
+            </Link>
+            <Link
+              href="/contact"
+              className="text-ink-soft transition-colors hover:text-ink"
+            >
+              Contact
+            </Link>
+          </nav>
+        </div>
       </div>
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
