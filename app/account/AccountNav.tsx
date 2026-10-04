@@ -16,7 +16,7 @@ export default function AccountNav({ unread = 0 }: { unread?: number }) {
   return (
     <nav
       aria-label="Account"
-      className="mt-6 flex gap-1 overflow-x-auto border-b border-line"
+      className="mt-6 flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--line)]"
     >
       {tabs.map((tab) => {
         const active = pathname === tab.href;
@@ -25,7 +25,7 @@ export default function AccountNav({ unread = 0 }: { unread?: number }) {
             key={tab.href}
             href={tab.href}
             aria-current={active ? "page" : undefined}
-            className={`-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3 pb-3 pt-1 text-[15px] font-semibold transition-colors ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 pb-3 pt-1 text-[15px] font-semibold transition-colors ${
               active
                 ? "border-brand-ink text-ink"
                 : "border-transparent text-ink-soft hover:text-ink"

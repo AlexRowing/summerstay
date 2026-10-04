@@ -5,11 +5,18 @@ import { prisma } from "@/app/_lib/db";
 import { countUnread } from "@/app/_lib/listings";
 import { signOutAction } from "@/app/_lib/auth-actions";
 import AccountNav from "@/app/account/AccountNav";
+import VtVerifyCard from "@/app/account/VtVerifyCard";
+import VerifiedBadge from "@/app/_components/VerifiedBadge";
 import { button, size } from "@/app/_components/ui";
 
 export const metadata: Metadata = { title: "Profile" };
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ verified?: string }>;
+}) {
+  const { verified } = await searchParams;
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) redirect("/login?next=/account");
@@ -47,11 +54,27 @@ export default async function AccountPage() {
           {displayName.charAt(0).toUpperCase()}
         </span>
         <div className="min-w-0">
-          <p className="truncate text-lg font-bold">{displayName}</p>
+          <p className="flex flex-wrap items-center gap-2 text-lg font-bold">
+            <span className="truncate">{displayName}</span>
+            {user.vtVerifiedAt && <VerifiedBadge />}
+          </p>
           <p className="text-[15px] text-ink-soft">
             On SummerStay since {memberSince}
           </p>
         </div>
+      </div>
+
+      {verified === "1" && user.vtVerifiedAt && (
+        <p
+          role="status"
+          className="mt-6 rounded-xl bg-success-soft px-4 py-3 text-[15px] font-medium"
+        >
+          You&apos;re verified. The badge now shows on all your listings.
+        </p>
+      )}
+
+      <div className="mt-8">
+        <VtVerifyCard verifiedEmail={user.vtEmail} loginEmail={user.email} />
       </div>
 
       <dl className="mt-8 divide-y divide-line border-y border-line">

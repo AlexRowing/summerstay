@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { House, Inbox, LogOut, Plus, UserRound } from "lucide-react";
 import { signOutAction } from "@/app/_lib/auth-actions";
@@ -14,12 +15,16 @@ const iconClass = "size-4 text-ink-soft";
 export default function UserMenu({
   name,
   email,
-  unread,
+  unread: initialUnread,
 }: {
   name: string | null;
   email: string;
   unread: number;
 }) {
+  // Opening the inbox marks everything read, but the navbar was rendered in
+  // the same request, so don't show a stale count while on that page.
+  const pathname = usePathname();
+  const unread = pathname === "/account/inbox" ? 0 : initialUnread;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

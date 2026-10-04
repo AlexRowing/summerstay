@@ -3,7 +3,15 @@
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { prisma } from "@/app/_lib/db";
+import { redirect } from "next/navigation";
 import { signIn, signOut } from "@/auth";
+import { emailConfigured, sendPasswordResetEmail } from "@/app/_lib/email";
+import { linkOrigin } from "@/app/_lib/origin";
+import {
+  consumeEmailToken,
+  createEmailToken,
+  sentRecently,
+} from "@/app/_lib/tokens";
 
 // What the login/signup forms render back: an error message, or nothing on
 // success (a successful auth redirects instead of returning).
@@ -89,4 +97,56 @@ export async function register(
     }
     throw error;
   }
+}
+
+export type ResetRequestState = { status: "idle" | "sent"; devNote?: boolean };
+
+// Email a password reset link. Always reports success, so the form can't be
+// used to find out which emails have accounts.
+export async function requestPasswordReset(
+  _prev: ResetRequestState,
+  formData: FormData,
+): Promise<ResetRequestState> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const user = email
+    ? await prisma.user.findUnique({ where: { email } })
+    : null;
+
+  if (user && !(await sentRecently(user.id, "reset_password"))) {
+    const token = await createEmailToken(user.id, "reset_password", email, 60);
+    const url = `${await linkOrigin()}/reset-password?token=${token}`;
+    const sent = await sendPasswordResetEmail(user.email, url);
+    if (!sent && !emailConfigured() && process.env.NODE_ENV !== "production") {
+      return { status: "sent", devNote: true };
+    }
+  }
+  return { status: "sent" };
+}
+
+// Set a new password from a reset link.
+export async function resetPassword(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const token = String(formData.get("token") ?? "");
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const row = await consumeEmailToken(token, "reset_password");
+  if (!row) {
+    return {
+      error:
+        "This reset link has expired or was already used. Request a new one.",
+    };
+  }
+
+  await prisma.user.update({
+    where: { id: row.userId },
+    data: { passwordHash: await bcrypt.hash(password, 10) },
+  });
+  redirect("/login?reset=1");
 }

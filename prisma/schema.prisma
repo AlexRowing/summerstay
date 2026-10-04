@@ -55,6 +55,28 @@ model User {
   name         String?
   createdAt    DateTime  @default(now())
   listings     Listing[]
+  // A Virginia Tech address the user proved they own (can differ from the
+  // login email). Set together with vtVerifiedAt; drives the verified badge.
+  vtEmail      String?   @unique
+  vtVerifiedAt DateTime?
+  emailTokens  EmailToken[]
+}
+
+// One-time links sent by email: verifying a @vt.edu address, or resetting a
+// password. Only a SHA-256 hash of the token is stored, so a database leak
+// can't be used to click someone else's link.
+model EmailToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  purpose   String   // "verify_vt" | "reset_password"
+  // The address the link was sent to (the @vt.edu address for verify_vt).
+  email     String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId, purpose])
 }
 
 // A message from a prospective subletter about one listing. This is the

@@ -14,6 +14,7 @@ import {
 import { auth } from "@/auth";
 import ContactForm from "@/app/_components/ContactForm";
 import PhotoGallery from "@/app/_components/PhotoGallery";
+import VerifiedBadge from "@/app/_components/VerifiedBadge";
 import DeleteListingButton from "@/app/_components/DeleteListingButton";
 import { button, size } from "@/app/_components/ui";
 import { formatPrice, shortDistance, termFor } from "@/app/_lib/format";
@@ -182,9 +183,15 @@ export default async function ListingDetailPage({
                   {hostName.charAt(0).toUpperCase()}
                 </span>
                 <div>
-                  <p className="font-semibold">{hostName}</p>
+                  <p className="flex flex-wrap items-center gap-2 font-semibold">
+                    {hostName}
+                    {host.verified && <VerifiedBadge />}
+                  </p>
                   <p className="text-[15px] text-ink-soft">
-                    On SummerStay since {memberSince}
+                    {host.verified
+                      ? "Confirmed a @vt.edu email"
+                      : "Hasn't verified a @vt.edu email yet"}{" "}
+                    · On SummerStay since {memberSince}
                   </p>
                 </div>
               </div>

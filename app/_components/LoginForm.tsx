@@ -67,9 +67,17 @@ export default function LoginForm({ next }: { next?: string }) {
         {errors.email && <p className={fieldError}>{errors.email}</p>}
       </div>
       <div>
-        <label htmlFor="password" className={label}>
-          Password
-        </label>
+        <div className="flex items-baseline justify-between">
+          <label htmlFor="password" className={label}>
+            Password
+          </label>
+          <Link
+            href="/forgot-password"
+            className="text-[13px] font-semibold text-brand-ink underline-offset-4 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <PasswordInput
           id="password"
           name="password"

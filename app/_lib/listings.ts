@@ -25,12 +25,18 @@ export type Listing = {
   // All photos in display order; older listings get their single imageUrl.
   photos: string[];
   ownerId: string | null;
+  // The host confirmed a @vt.edu email address.
+  hostVerified: boolean;
   createdAt: Date;
 };
 
+// Every listing query pulls just enough of the owner to show the badge.
+const withOwner = { owner: { select: { vtVerifiedAt: true } } } as const;
+type Row = ListingRow & { owner?: { vtVerifiedAt: Date | null } | null };
+
 // The one place that translates a raw database row into a Listing. The DB
 // stores amenities as a JSON string, so we parse it back into an array here.
-function toListing(row: ListingRow): Listing {
+function toListing(row: Row): Listing {
   return {
     id: row.id,
     title: row.title,
@@ -49,6 +55,7 @@ function toListing(row: ListingRow): Listing {
     imageUrl: row.imageUrl,
     photos: row.photos.length > 0 ? row.photos : [row.imageUrl],
     ownerId: row.ownerId,
+    hostVerified: Boolean(row.owner?.vtVerifiedAt),
     createdAt: row.createdAt,
   };
 }
@@ -91,6 +98,7 @@ export type ListingFilters = {
   maxPrice?: number;
   bedrooms?: number;
   term?: Term;
+  verifiedOnly?: boolean;
   sort?: Sort;
 };
 
@@ -117,10 +125,14 @@ export async function getListings(
   if (filters.bedrooms !== undefined) {
     and.push({ bedrooms: { gte: filters.bedrooms } });
   }
+  if (filters.verifiedOnly) {
+    and.push({ owner: { vtVerifiedAt: { not: null } } });
+  }
 
   const rows = await prisma.listing.findMany({
     where: { AND: and },
     orderBy: orderBys[filters.sort ?? "new"],
+    include: withOwner,
   });
   const listings = rows.map(toListing);
   // The term is derived from the dates (or the older free-text availability),
@@ -145,6 +157,7 @@ export async function getFeaturedListings(take: number): Promise<Listing[]> {
     },
     orderBy: { createdAt: "desc" },
     take,
+    include: withOwner,
   });
   if (rows.length >= take) return rows.map(toListing);
   // Not enough local listings yet: top up with the newest from anywhere.
@@ -152,6 +165,7 @@ export async function getFeaturedListings(take: number): Promise<Listing[]> {
     where: { AND: [liveWhere(), { id: { notIn: rows.map((r) => r.id) } }] },
     orderBy: { createdAt: "desc" },
     take: take - rows.length,
+    include: withOwner,
   });
   return [...rows, ...extra].map(toListing);
 }
@@ -190,11 +204,18 @@ export async function getNeighborhoods(): Promise<NeighborhoodSummary[]> {
 
 // A single listing, or null if no listing has that id.
 export async function getListingById(id: string): Promise<Listing | null> {
-  const row = await prisma.listing.findUnique({ where: { id } });
+  const row = await prisma.listing.findUnique({
+    where: { id },
+    include: withOwner,
+  });
   return row ? toListing(row) : null;
 }
 
-export type Host = { name: string | null; memberSince: Date };
+export type Host = {
+  name: string | null;
+  memberSince: Date;
+  verified: boolean;
+};
 
 // A listing plus the public bits of whoever posted it.
 export async function getListingWithHost(
@@ -202,13 +223,19 @@ export async function getListingWithHost(
 ): Promise<{ listing: Listing; host: Host | null } | null> {
   const row = await prisma.listing.findUnique({
     where: { id },
-    include: { owner: { select: { name: true, createdAt: true } } },
+    include: {
+      owner: { select: { name: true, createdAt: true, vtVerifiedAt: true } },
+    },
   });
   if (!row) return null;
   return {
     listing: toListing(row),
     host: row.owner
-      ? { name: row.owner.name, memberSince: row.owner.createdAt }
+      ? {
+          name: row.owner.name,
+          memberSince: row.owner.createdAt,
+          verified: Boolean(row.owner.vtVerifiedAt),
+        }
       : null,
   };
 }
@@ -218,6 +245,7 @@ export async function getListingsByOwner(ownerId: string): Promise<Listing[]> {
   const rows = await prisma.listing.findMany({
     where: { ownerId },
     orderBy: { createdAt: "desc" },
+    include: withOwner,
   });
   return rows.map(toListing);
 }

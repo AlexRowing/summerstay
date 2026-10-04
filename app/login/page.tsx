@@ -7,9 +7,9 @@ export const metadata: Metadata = { title: "Log in" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; reset?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, reset } = await searchParams;
   const posting = next === "/host";
 
   return (
@@ -21,6 +21,14 @@ export default async function LoginPage({
           : "Log in to manage your listings."
       }
     >
+      {reset === "1" && (
+        <p
+          role="status"
+          className="mt-6 rounded-xl bg-success-soft px-4 py-3 text-[15px] font-medium"
+        >
+          Password updated. Log in with your new one.
+        </p>
+      )}
       <LoginForm next={next} />
     </AuthShell>
   );

@@ -31,12 +31,14 @@ export default function SearchBar({
   maxPrice,
   bedrooms,
   term,
+  verified,
   sort,
 }: {
   q?: string;
   maxPrice?: number;
   bedrooms?: number;
   term?: string;
+  verified?: boolean;
   sort?: string;
 }) {
   const prices =
@@ -98,6 +100,7 @@ export default function SearchBar({
 
       {/* Keep the term tab and sort order when searching again. */}
       {term && <input type="hidden" name="term" value={term} />}
+      {verified && <input type="hidden" name="verified" value="1" />}
       {sort && <input type="hidden" name="sort" value={sort} />}
 
       <button

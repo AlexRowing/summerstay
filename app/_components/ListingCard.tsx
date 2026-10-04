@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BedDouble, Bath } from "lucide-react";
 import type { Listing } from "@/app/_lib/listings";
+import VerifiedBadge from "@/app/_components/VerifiedBadge";
 import { formatPrice, isNew, shortDistance, termFor } from "@/app/_lib/format";
 
 // What a card needs to render. A saved listing has an id (the card links to
@@ -17,7 +18,7 @@ export type CardData = Pick<
   | "bathrooms"
   | "pricePerMonth"
   | "imageUrl"
-> & { id?: string; createdAt?: Date };
+> & { id?: string; createdAt?: Date; hostVerified?: boolean };
 
 // The signature object of the product: photo first, then the three things a
 // student scans for (where, when, how much). Flat at rest; the photo eases in
@@ -49,6 +50,7 @@ export default function ListingCard({
               New
             </span>
           )}
+          {listing.hostVerified && <VerifiedBadge variant="overlay" />}
           {term && (
             <span className="rounded-md bg-card/95 px-2 py-1 text-xs font-semibold text-ink shadow-sm">
               {term}

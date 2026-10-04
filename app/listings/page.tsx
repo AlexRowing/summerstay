@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SearchX, X } from "lucide-react";
+import { BadgeCheck, SearchX, X } from "lucide-react";
 import ListingCard from "@/app/_components/ListingCard";
 import SearchBar from "@/app/_components/SearchBar";
 import { button, size } from "@/app/_components/ui";
@@ -15,6 +15,7 @@ type Params = {
   maxPrice?: string;
   bedrooms?: string;
   term?: string;
+  verified?: string;
   sort?: string;
 };
 
@@ -36,10 +37,22 @@ export default async function ListingsPage({
   const bedrooms = toNumber(params.bedrooms);
   const sort: Sort = isSort(params.sort) ? params.sort : "new";
   const term = isTerm(params.term) ? params.term : undefined;
+  const verifiedOnly = params.verified === "1";
 
-  const listings = await getListings({ q, maxPrice, bedrooms, term, sort });
+  const listings = await getListings({
+    q,
+    maxPrice,
+    bedrooms,
+    term,
+    verifiedOnly,
+    sort,
+  });
   const isFiltered = Boolean(
-    q || maxPrice !== undefined || bedrooms !== undefined || term,
+    q ||
+    maxPrice !== undefined ||
+    bedrooms !== undefined ||
+    term ||
+    verifiedOnly,
   );
 
   // Build a /listings URL from the current params with some keys changed.
@@ -52,6 +65,7 @@ export default async function ListingsPage({
       maxPrice: maxPrice?.toString(),
       bedrooms: bedrooms?.toString(),
       term,
+      verified: verifiedOnly ? "1" : undefined,
       sort: sort === "new" ? undefined : sort,
       ...changes,
     };
@@ -89,13 +103,14 @@ export default async function ListingsPage({
           maxPrice={maxPrice}
           bedrooms={bedrooms}
           term={term}
+          verified={verifiedOnly}
           sort={sort === "new" ? undefined : sort}
         />
       </div>
 
       {/* Term tabs: the first thing most students know is *when*. */}
       <nav
-        aria-label="Term"
+        aria-label="Filters"
         className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
       >
         {[undefined, ...TERMS].map((t) => {
@@ -115,6 +130,22 @@ export default async function ListingsPage({
             </Link>
           );
         })}
+        <span
+          aria-hidden="true"
+          className="mx-1 w-px shrink-0 self-stretch bg-line"
+        />
+        <Link
+          href={hrefWith({ verified: verifiedOnly ? undefined : "1" })}
+          aria-current={verifiedOnly ? "true" : undefined}
+          className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition-colors ${
+            verifiedOnly
+              ? "border-brand-ink bg-brand-soft text-brand-ink"
+              : "border-line-strong text-ink-soft hover:border-ink-faint hover:text-ink"
+          }`}
+        >
+          <BadgeCheck className="size-4" aria-hidden="true" />
+          Verified hosts
+        </Link>
       </nav>
 
       {/* Toolbar: result count + active filters on the left, sort on the
