@@ -8,11 +8,11 @@ import AccountNav from "@/app/account/AccountNav";
 import { button, size } from "@/app/_components/ui";
 import { formatPrice } from "@/app/_lib/format";
 import {
-  countUnread,
   getInquiryCounts,
   getListingsByOwner,
   hasEnded,
 } from "@/app/_lib/listings";
+import { countAllUnread } from "@/app/_lib/messages";
 
 export const metadata: Metadata = { title: "My listings" };
 
@@ -24,7 +24,7 @@ export default async function MyListingsPage() {
   const listings = await getListingsByOwner(userId);
   const [inquiries, unread] = await Promise.all([
     getInquiryCounts(listings.map((l) => l.id)),
-    countUnread(userId),
+    countAllUnread(userId),
   ]);
 
   return (
@@ -105,10 +105,10 @@ export default async function MyListingsPage() {
                       <span className="text-ink-faint">No messages yet</span>
                     ) : (
                       <Link
-                        href="/account/inbox"
+                        href="/messages"
                         className="text-brand-ink underline-offset-4 hover:underline"
                       >
-                        {count} {count === 1 ? "message" : "messages"}
+                        {count} interested
                       </Link>
                     )}
                   </p>

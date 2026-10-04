@@ -9,7 +9,8 @@ import ListingCard from "@/app/_components/ListingCard";
 import { button, size } from "@/app/_components/ui";
 import { prisma } from "@/app/_lib/db";
 import { alertHref, describeAlert } from "@/app/_lib/format";
-import { countUnread, getSavedListings, hasEnded } from "@/app/_lib/listings";
+import { getSavedListings, hasEnded } from "@/app/_lib/listings";
+import { countAllUnread } from "@/app/_lib/messages";
 
 export const metadata: Metadata = { title: "Saved" };
 
@@ -24,7 +25,7 @@ export default async function SavedPage() {
       where: { userId },
       orderBy: { createdAt: "desc" },
     }),
-    countUnread(userId),
+    countAllUnread(userId),
   ]);
 
   return (

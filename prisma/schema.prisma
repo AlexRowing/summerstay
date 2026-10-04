@@ -46,6 +46,7 @@ model Listing {
   inquiries        Inquiry[]
   savedBy          SavedListing[]
   reports          Report[]
+  conversations    Conversation[]
   // Who posted this listing. Nullable because the seeded starter listings have
   // no owner; listings created through the form after auth get an owner.
   owner            User?     @relation(fields: [ownerId], references: [id])
@@ -67,6 +68,43 @@ model User {
   emailTokens  EmailToken[]
   saved        SavedListing[]
   searchAlerts SearchAlert[]
+  hosting      Conversation[] @relation("host")
+  asking       Conversation[] @relation("guest")
+  messages     Message[]
+}
+
+// A private thread between a listing's host and one interested student.
+// One per (listing, student). Read times are kept per side so each person
+// gets their own unread count.
+model Conversation {
+  id            String    @id @default(cuid())
+  listing       Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId     String
+  host          User      @relation("host", fields: [hostId], references: [id], onDelete: Cascade)
+  hostId        String
+  guest         User      @relation("guest", fields: [guestId], references: [id], onDelete: Cascade)
+  guestId       String
+  hostReadAt    DateTime?
+  guestReadAt   DateTime?
+  lastMessageAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  messages      Message[]
+
+  @@unique([listingId, guestId])
+  @@index([hostId, lastMessageAt])
+  @@index([guestId, lastMessageAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  senderId       String
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
 }
 
 // A listing someone hearted.

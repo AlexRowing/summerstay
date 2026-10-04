@@ -7,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   CircleCheck,
+  MessagesSquare,
   Footprints,
   Pencil,
   ShieldCheck,
@@ -15,6 +16,8 @@ import { auth } from "@/auth";
 import ContactForm from "@/app/_components/ContactForm";
 import PhotoGallery from "@/app/_components/PhotoGallery";
 import ReportListing from "@/app/_components/ReportListing";
+import StartConversation from "@/app/_components/StartConversation";
+import { findConversation } from "@/app/_lib/messages";
 import SaveButton from "@/app/_components/SaveButton";
 import VerifiedBadge from "@/app/_components/VerifiedBadge";
 import { isAdminEmail } from "@/app/_lib/admin";
@@ -72,6 +75,10 @@ export default async function ListingDetailPage({
   const removed = listing.removedAt !== null;
   const unavailable = listing.isTaken || ended || removed;
   const savedIds = await getSavedIds(session?.user?.id);
+  const existingThread =
+    session?.user?.id && !isOwner
+      ? await findConversation(listing.id, session.user.id)
+      : null;
 
   const facts = [
     {
@@ -87,6 +94,7 @@ export default async function ListingDetailPage({
   ];
 
   const hostName = host?.name?.trim() || "A SummerStay member";
+  const hostFirstName = host?.name?.trim().split(" ")[0] || "the host";
   const memberSince = host?.memberSince.toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
@@ -347,10 +355,43 @@ export default async function ListingDetailPage({
             ) : (
               <div className="mt-6 border-t border-line pt-6">
                 <h2 className="font-bold">Interested? Say hi.</h2>
-                <ContactForm
-                  listingId={listing.id}
-                  listingTitle={listing.title}
-                />
+                {existingThread ? (
+                  <div className="mt-3">
+                    <p className="text-[15px] text-ink-soft">
+                      You&apos;re already talking with {hostFirstName}.
+                    </p>
+                    <Link
+                      href={`/messages/${existingThread.id}`}
+                      className={`${button.primary} ${size.lg} mt-4 w-full`}
+                    >
+                      <MessagesSquare className="size-5" aria-hidden="true" />
+                      Open conversation
+                    </Link>
+                  </div>
+                ) : session?.user ? (
+                  <StartConversation
+                    listingId={listing.id}
+                    listingTitle={listing.title}
+                    hostFirstName={hostFirstName}
+                  />
+                ) : (
+                  <>
+                    <ContactForm
+                      listingId={listing.id}
+                      listingTitle={listing.title}
+                    />
+                    <p className="mt-3 text-center text-[13px] text-ink-soft">
+                      Have an account?{" "}
+                      <Link
+                        href={`/login?next=/listings/${listing.id}`}
+                        className="font-semibold text-brand-ink underline-offset-4 hover:underline"
+                      >
+                        Log in
+                      </Link>{" "}
+                      to chat in the app instead.
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>

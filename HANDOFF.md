@@ -21,7 +21,8 @@ Design direction and rules live in `PRODUCT.md` (strategy) and `DESIGN.md` (visu
 
 - **Browse** (`/listings`): free-text search (city, neighborhood, title), max rent, bedrooms, term tabs, a "Verified hosts" filter, and sorting. Everything lives in URL params. Only *live* listings appear: not taken, and end date not passed.
 - **Listing page** (`/listings/[id]`): photo gallery (grid, swipe strip on phones, full-screen `<dialog>` viewer), facts, amenities, "Posted by" with the Verified Hokie badge, a safety-tips box, and a sticky contact panel with a phone action bar. Ownerless listings show "Sample listing" and don't take messages. Taken or expired listings show a banner and no contact form.
-- **Contact a host**: saves an `Inquiry`, then emails the host via `after()` (Reply-To is the student). Has a honeypot field and a limit of one message per sender per listing every 10 minutes.
+- **Messaging**: logged-in students message a host from the listing page. That opens a `Conversation` (one per listing per student) at `/messages/[id]`: chat bubbles, Enter to send, and a refresh every 8 seconds while the tab is visible (no socket server). `/messages` lists every thread (as host or as student) with unread dots, plus any email inquiries. The other person gets one email per batch of unread messages (`app/messages/actions.ts`). Limit: 30 messages per person per 10 minutes. Threads close once a listing is taken or removed. `/account/inbox` redirects to `/messages`.
+- **Contact a host (logged out)**: saves an `Inquiry`, then emails the host via `after()` (Reply-To is the student). Has a honeypot field and a limit of one message per sender per listing every 10 minutes.
 - **Host flow** (`/host`, `/listings/[id]/edit`): sectioned form with a live card preview, move-in/move-out date pickers with term presets, amenity chips, and photo uploads (up to 8, shrunk in the browser, first photo is the cover). Owners can mark a listing taken or available, or delete it (two-step confirm). Removed photos are deleted from Blob after the response.
 - **Account**: `/account/inbox` (messages, marked read on open, unread badge in the navbar menu), `/account/listings` (status and message counts), `/account` (profile plus Verified Hokie card).
 - **Verified Hokie**: the user enters a `@vt.edu` address, gets an email link to `/verify?token=…`, and presses Confirm (a button, so email scanners can't use up the link). Sets `User.vtEmail` and `vtVerifiedAt`.
@@ -36,6 +37,7 @@ Design direction and rules live in `PRODUCT.md` (strategy) and `DESIGN.md` (visu
 - `Listing`: core fields plus `startDate`/`endDate` (nullable; older rows only have the free-text `availability`, which is generated from the dates for new rows), `isTaken`, `photos String[]` (`imageUrl` = the cover), `ownerId` (nullable; null means sample).
 - `User`: email, passwordHash, name, `vtEmail` (unique), `vtVerifiedAt`.
 - `Inquiry`: listing (cascade delete), name, email, message, `readAt`.
+- `Conversation` (listing, host, guest, per-side read times, `lastMessageAt`; unique per listing + guest) and `Message` (sender, body).
 - `SavedListing` (user + listing, composite key), `SearchAlert` (q, maxPrice, bedrooms, term, verified), and `Report` (reason, details, optional email, resolvedAt). `Listing.removedAt` marks a moderator takedown.
 - `EmailToken`: one-time links. Only a SHA-256 hash is stored, with purpose `verify_vt` or `reset_password`. Cascades with the user.
 
@@ -77,5 +79,4 @@ Email links in production always use `SITE_URL`, never the request Host header, 
 ## 8. Ideas not built yet
 
 - Map view (deliberately skipped so far).
-- Messaging threads in-app (today the reply goes over email).
 - Moving `amenities` to a native Postgres array.

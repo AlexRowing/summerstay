@@ -253,17 +253,30 @@ export async function getListingsByOwner(ownerId: string): Promise<Listing[]> {
   return rows.map(toListing);
 }
 
-// Inquiry counts per listing, keyed by listing id.
+// How many people reached out about each listing (email inquiries plus
+// in-app conversations), keyed by listing id.
 export async function getInquiryCounts(
   listingIds: string[],
 ): Promise<Record<string, number>> {
   if (listingIds.length === 0) return {};
-  const groups = await prisma.inquiry.groupBy({
-    by: ["listingId"],
-    where: { listingId: { in: listingIds } },
-    _count: { _all: true },
-  });
-  return Object.fromEntries(groups.map((g) => [g.listingId, g._count._all]));
+  const where = { listingId: { in: listingIds } };
+  const [inquiries, conversations] = await Promise.all([
+    prisma.inquiry.groupBy({
+      by: ["listingId"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.conversation.groupBy({
+      by: ["listingId"],
+      where,
+      _count: { _all: true },
+    }),
+  ]);
+  const counts: Record<string, number> = {};
+  for (const g of [...inquiries, ...conversations]) {
+    counts[g.listingId] = (counts[g.listingId] ?? 0) + g._count._all;
+  }
+  return counts;
 }
 
 export type InboxMessage = {
@@ -292,12 +305,6 @@ export async function getInbox(ownerId: string): Promise<InboxMessage[]> {
     unread: r.readAt === null,
     listing: r.listing,
   }));
-}
-
-export async function countUnread(ownerId: string): Promise<number> {
-  return prisma.inquiry.count({
-    where: { readAt: null, listing: { ownerId } },
-  });
 }
 
 // Mark every unread message for this host as read (they've opened the inbox).

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/app/_lib/db";
-import { countUnread } from "@/app/_lib/listings";
+import { countAllUnread } from "@/app/_lib/messages";
 import { signOutAction } from "@/app/_lib/auth-actions";
 import AccountNav from "@/app/account/AccountNav";
 import VtVerifyCard from "@/app/account/VtVerifyCard";
@@ -26,7 +26,7 @@ export default async function AccountPage({
     include: { _count: { select: { listings: true } } },
   });
   if (!user) redirect("/login");
-  const unread = await countUnread(userId);
+  const unread = await countAllUnread(userId);
 
   const memberSince = user.createdAt.toLocaleDateString("en-US", {
     year: "numeric",

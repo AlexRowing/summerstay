@@ -94,7 +94,7 @@ export async function sendInquiryEmail(email: {
   const greeting = email.hostName
     ? `Hi ${email.hostName.split(" ")[0]},`
     : "Hi,";
-  const inboxUrl = `${SITE_URL}/account/inbox`;
+  const inboxUrl = `${SITE_URL}/messages`;
   const listingUrl = `${SITE_URL}/listings/${email.listing.id}`;
 
   await send({
@@ -257,6 +257,43 @@ export async function sendAlertEmail(alert: {
       ],
       { label: "See the place", url: listingUrl },
       `You're getting this because you saved a search on SummerStay. <a href="${manageUrl}" style="color:#6b5a5f">Manage or turn off alerts</a>.`,
+    ),
+  });
+}
+
+// Someone sent a message in a SummerStay thread. Only the first unread message
+// triggers an email, so a back-and-forth doesn't flood anyone's inbox.
+export async function sendMessageEmail(email: {
+  to: string;
+  toName: string | null;
+  fromName: string;
+  listingTitle: string;
+  body: string;
+  threadUrl: string;
+}): Promise<void> {
+  const greeting = email.toName ? `Hi ${email.toName.split(" ")[0]},` : "Hi,";
+  await send({
+    to: email.to,
+    subject: `${email.fromName} sent you a message about ${email.listingTitle}`,
+    text: [
+      greeting,
+      "",
+      `${email.fromName} wrote about "${email.listingTitle}":`,
+      "",
+      email.body,
+      "",
+      `Reply on SummerStay: ${email.threadUrl}`,
+    ].join("\n"),
+    html: layout(
+      [
+        para(escapeHtml(greeting)),
+        para(
+          `<strong>${escapeHtml(email.fromName)}</strong> wrote about <strong>${escapeHtml(email.listingTitle)}</strong>:`,
+        ),
+        `<div style="background:#f6f2f3;border-radius:12px;padding:16px 18px;font-size:15px;white-space:pre-line">${escapeHtml(email.body)}</div>`,
+      ],
+      { label: "Reply on SummerStay", url: email.threadUrl },
+      "Replies to this email don't reach the other person. Answer on SummerStay so the whole conversation stays in one place.",
     ),
   });
 }

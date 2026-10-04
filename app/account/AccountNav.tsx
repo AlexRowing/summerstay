@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 export default function AccountNav({ unread = 0 }: { unread?: number }) {
   const pathname = usePathname();
   const tabs = [
-    { href: "/account/inbox", label: "Inbox", badge: unread },
+    { href: "/messages", label: "Messages", badge: unread },
     { href: "/account/saved", label: "Saved", badge: 0 },
     { href: "/account/listings", label: "My listings", badge: 0 },
     { href: "/account", label: "Profile", badge: 0 },

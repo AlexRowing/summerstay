@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Heart,
@@ -23,7 +22,7 @@ const iconClass = "size-4 text-ink-soft";
 export default function UserMenu({
   name,
   email,
-  unread: initialUnread,
+  unread,
   isAdmin = false,
 }: {
   name: string | null;
@@ -31,10 +30,6 @@ export default function UserMenu({
   unread: number;
   isAdmin?: boolean;
 }) {
-  // Opening the inbox marks everything read, but the navbar was rendered in
-  // the same request, so don't show a stale count while on that page.
-  const pathname = usePathname();
-  const unread = pathname === "/account/inbox" ? 0 : initialUnread;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -69,7 +64,7 @@ export default function UserMenu({
         aria-expanded={open}
         aria-label={
           unread > 0
-            ? `Account menu, ${unread} unread messages`
+            ? `Account menu, ${unread} unread ${unread === 1 ? "message" : "messages"}`
             : "Account menu"
         }
         className="flex items-center gap-2 rounded-full p-0.5 transition-colors hover:bg-sunken sm:pr-3"
@@ -109,12 +104,12 @@ export default function UserMenu({
             <Plus className={iconClass} /> List your place
           </Link>
           <Link
-            href="/account/inbox"
+            href="/messages"
             role="menuitem"
             className={itemClass}
             onClick={close}
           >
-            <Inbox className={iconClass} /> Inbox
+            <Inbox className={iconClass} /> Messages
             {unread > 0 && (
               <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-xs font-bold text-on-brand">
                 {unread}

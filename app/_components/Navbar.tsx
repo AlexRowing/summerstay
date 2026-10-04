@@ -6,11 +6,11 @@ import NavLink from "@/app/_components/NavLink";
 import UserMenu from "@/app/_components/UserMenu";
 import { button, size } from "@/app/_components/ui";
 import { isAdminEmail } from "@/app/_lib/admin";
-import { countUnread } from "@/app/_lib/listings";
+import { countAllUnread } from "@/app/_lib/messages";
 
 export default async function Navbar() {
   const session = await auth();
-  const unread = session?.user?.id ? await countUnread(session.user.id) : 0;
+  const unread = session?.user?.id ? await countAllUnread(session.user.id) : 0;
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-md">
@@ -35,7 +35,7 @@ export default async function Navbar() {
             <>
               <Link
                 href="/host"
-                className={`${button.primary} ${size.sm} ml-1 hidden sm:inline-flex`}
+                className={`${button.primary} ${size.sm} ml-1 max-sm:hidden`}
               >
                 List your place
               </Link>
