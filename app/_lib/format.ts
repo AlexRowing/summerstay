@@ -193,3 +193,22 @@ export function alertHref(a: AlertFilters): string {
   const qs = params.toString();
   return qs ? `/listings?${qs}` : "/listings";
 }
+
+// The Drillfield, the middle of campus. Default map center.
+export const CAMPUS = { lat: 37.2284, lng: -80.4234 };
+
+// Roughly the Blacksburg / Christiansburg area. Pins outside it are ignored.
+export function isNearCampus(lat: number, lng: number): boolean {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    Math.abs(lat - CAMPUS.lat) < 0.25 &&
+    Math.abs(lng - CAMPUS.lng) < 0.3
+  );
+}
+
+// Public maps only ever get a rounded location (about 100 m), never the
+// exact pin, so a listing can't be used to find someone's front door.
+export function approximate(n: number): number {
+  return Math.round(n * 1000) / 1000;
+}

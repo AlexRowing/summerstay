@@ -28,6 +28,7 @@ Design direction and rules live in `PRODUCT.md` (strategy) and `DESIGN.md` (visu
 - **Verified Hokie**: the user enters a `@vt.edu` address, gets an email link to `/verify?token=…`, and presses Confirm (a button, so email scanners can't use up the link). Sets `User.vtEmail` and `vtVerifiedAt`.
 - **Password reset**: `/forgot-password` always shows success (no account enumeration) and emails a 1-hour link to `/reset-password?token=…`.
 - **Auth**: signup and login support a safe `?next=` redirect (same-site paths only).
+- **Map**: hosts can drop an optional pin (`LocationPicker`, stored as `Listing.lat`/`lng`, only accepted near campus). Browse has a List/Map toggle (`?view=map`) with price-pill markers and popups. The listing page shows an area circle plus the Drillfield. Public maps only use coordinates rounded to about 100 m (`approximate()`). Built on Leaflet with OpenStreetMap tiles (free with attribution under OSM's tile policy; if traffic grows, switch to a paid tile provider in `app/_components/map/leaflet.ts`). Dark mode inverts the tiles in CSS. Sample listings have approximate neighborhood coordinates.
 - **Saved places**: a heart on cards and the listing page (optimistic, using a server action). The list is at `/account/saved`.
 - **Search alerts**: "Turn on alerts" on the browse page saves the current filters (max 10 per user). When a listing is created, `app/_lib/alerts.ts` emails every matching user once (never the poster). Alerts can be managed on `/account/saved`.
 - **Reports and moderation**: "Report this listing" (no login; honeypot; at most 20 open reports per listing) stores a `Report` and emails `ADMIN_EMAILS`. `/admin` (moderators only; a 404 for everyone else) lists open reports with Dismiss/Take down, plus every listing with Take down/Restore. Taken-down listings (`removedAt`) 404 for everyone except the owner (who sees a banner) and admins.
@@ -78,5 +79,4 @@ Email links in production always use `SITE_URL`, never the request Host header, 
 
 ## 8. Ideas not built yet
 
-- Map view (deliberately skipped so far).
 - Moving `amenities` to a native Postgres array.

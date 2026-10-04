@@ -138,6 +138,140 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+  Maps (Leaflet). `isolation` keeps Leaflet's high z-indexes inside the map
+  so controls never float over the sticky navbar.
+*/
+.ss-map {
+  isolation: isolate;
+  font-family: var(--font-sans);
+}
+.ss-map.leaflet-container {
+  background: var(--sunken);
+}
+/* Soften the busy OSM style to sit quietly under the pins; in dark mode,
+   invert it into a dark map. Only the tiles are filtered, not the markers. */
+.ss-map .leaflet-tile-pane {
+  filter: saturate(0.55) contrast(0.95);
+}
+.dark .ss-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) saturate(0.35) brightness(0.85)
+    contrast(0.9);
+}
+.ss-map .leaflet-control-attribution {
+  font-size: 10px;
+  background: color-mix(in oklch, var(--card) 85%, transparent);
+  color: var(--ink-soft);
+}
+.ss-map .leaflet-control-attribution a {
+  color: var(--ink-soft);
+}
+.ss-map .leaflet-bar a {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.ss-map .leaflet-bar a:hover {
+  background: var(--sunken);
+}
+
+/* Price pill marker, centered on its point. */
+.ss-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: 700 13px/1.2 var(--font-sans);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 4px 10px -4px rgb(0 0 0 / 0.3);
+  cursor: pointer;
+  transition:
+    background-color 150ms var(--ease-out-quart),
+    color 150ms var(--ease-out-quart),
+    transform 150ms var(--ease-out-quart);
+}
+.leaflet-marker-icon:hover .ss-pin,
+.leaflet-marker-icon:focus-visible .ss-pin {
+  background: var(--brand);
+  color: var(--on-brand);
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.ss-campus {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--surface);
+  font: 700 11px/1.2 var(--font-sans);
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+/* The host's draggable pin: a maroon teardrop with an orange dot. */
+.ss-drop {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--brand);
+  box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.35);
+  display: grid;
+  place-items: center;
+}
+.ss-drop::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.ss-map .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card);
+  color: var(--ink);
+}
+.ss-map .leaflet-popup-tip {
+  background: var(--card);
+}
+.ss-map .leaflet-popup-content {
+  margin: 0;
+  width: 240px !important;
+}
+.ss-popup {
+  display: block;
+  color: var(--ink) !important;
+  text-decoration: none;
+}
+.ss-popup img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+.ss-popup-body {
+  display: block;
+  padding: 10px 12px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ss-popup-body strong {
+  display: block;
+  font-size: 14px;
+}
+.ss-popup-body span {
+  color: var(--ink-soft);
+}
+
 @keyframes menu-in {
   from {
     opacity: 0;

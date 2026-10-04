@@ -18,6 +18,8 @@ const base = new Date("2026-02-01T05:00:00Z").getTime();
 const seedListings = [
   {
     id: "cmrhfygaz0000c0c2cmqs9h8v",
+    lat: 37.2392,
+    lng: -80.417,
     title: "Sunny 2BR near the Drillfield",
     city: "Blacksburg, VA",
     neighborhood: "North Main",
@@ -34,6 +36,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0001c0c2ds2ftek1",
+    lat: 37.2338,
+    lng: -80.4108,
     title: "4BR House on Progress Street",
     city: "Blacksburg, VA",
     neighborhood: "Progress Street",
@@ -50,6 +54,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0002c0c20tcl88ql",
+    lat: 37.2296,
+    lng: -80.4142,
     title: "Room in a friendly 3BR downtown",
     city: "Blacksburg, VA",
     neighborhood: "Downtown Blacksburg",
@@ -66,6 +72,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0003c0c2oy192yg8",
+    lat: 37.2378,
+    lng: -80.4293,
     title: "Quiet studio on University City Blvd",
     city: "Blacksburg, VA",
     neighborhood: "University City",
@@ -82,6 +90,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0004c0c2cm3b9lcs",
+    lat: 37.2398,
+    lng: -80.4393,
     title: "2BR at Foxridge with pool access",
     city: "Blacksburg, VA",
     neighborhood: "Foxridge",
@@ -98,6 +108,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0005c0c2gotx0es3",
+    lat: 37.2318,
+    lng: -80.4385,
     title: "5BR house near Prices Fork",
     city: "Blacksburg, VA",
     neighborhood: "Prices Fork",
@@ -114,6 +126,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0006c0c2683zok4s",
+    lat: 37.2472,
+    lng: -80.433,
     title: "Cozy 1BR on Toms Creek Rd",
     city: "Blacksburg, VA",
     neighborhood: "Toms Creek",
@@ -129,6 +143,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0007c0c2vruyuc2a",
+    lat: 37.2142,
+    lng: -80.4452,
     title: "Furnished 2BR in Hethwood",
     city: "Blacksburg, VA",
     neighborhood: "Hethwood",
@@ -144,6 +160,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0008c0c26fp27w9b",
+    lat: 37.2437,
+    lng: -80.4232,
     title: "3BR townhouse near Patrick Henry",
     city: "Blacksburg, VA",
     neighborhood: "Patrick Henry",
@@ -159,6 +177,8 @@ const seedListings = [
   },
   {
     id: "cmrhfygaz0009c0c2fowdsgok",
+    lat: 37.2311,
+    lng: -80.4126,
     title: "Room in 4BR steps from Squires",
     city: "Blacksburg, VA",
     neighborhood: "Downtown Blacksburg",

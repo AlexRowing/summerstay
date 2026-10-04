@@ -15,6 +15,7 @@ import {
 import { auth } from "@/auth";
 import ContactForm from "@/app/_components/ContactForm";
 import PhotoGallery from "@/app/_components/PhotoGallery";
+import AreaMap from "@/app/_components/map/AreaMap";
 import ReportListing from "@/app/_components/ReportListing";
 import StartConversation from "@/app/_components/StartConversation";
 import { findConversation } from "@/app/_lib/messages";
@@ -217,6 +218,23 @@ export default async function ListingDetailPage({
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {listing.lat !== null && listing.lng !== null && (
+            <section className="border-b border-line py-8">
+              <h2 className="text-xl font-bold tracking-[-0.01em]">
+                Where it is
+              </h2>
+              <p className="mt-1 text-[15px] text-ink-soft">
+                {listing.neighborhood} ·{" "}
+                {shortDistance(listing.distanceToCampus)}. The circle shows the
+                general area; the host shares the exact address once you&apos;re
+                talking.
+              </p>
+              <div className="mt-4">
+                <AreaMap lat={listing.lat} lng={listing.lng} />
+              </div>
             </section>
           )}
 

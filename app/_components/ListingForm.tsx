@@ -17,6 +17,7 @@ import {
 } from "@/app/_lib/format";
 import ListingCard, { type CardData } from "@/app/_components/ListingCard";
 import PhotoUploader from "@/app/_components/PhotoUploader";
+import LocationPicker from "@/app/_components/map/LocationPicker";
 import {
   button,
   field,
@@ -272,6 +273,16 @@ export default function ListingForm({
               className={field}
             />
             {err("distanceToCampus")}
+          </div>
+          <div>
+            <span className={label}>Location on the map</span>
+            <LocationPicker
+              initial={
+                listing?.lat != null && listing?.lng != null
+                  ? { lat: listing.lat, lng: listing.lng }
+                  : null
+              }
+            />
           </div>
         </Section>
 

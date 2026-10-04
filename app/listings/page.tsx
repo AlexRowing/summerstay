@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, BellRing, SearchX, X } from "lucide-react";
+import {
+  BadgeCheck,
+  BellRing,
+  LayoutGrid,
+  Map as MapIcon,
+  SearchX,
+  X,
+} from "lucide-react";
+import ListingsMap from "@/app/_components/map/ListingsMap";
 import { createSearchAlert } from "@/app/account/actions";
 import ListingCard from "@/app/_components/ListingCard";
 import SearchBar from "@/app/_components/SearchBar";
@@ -26,6 +34,7 @@ type Params = {
   verified?: string;
   sort?: string;
   alert?: string;
+  view?: string;
 };
 
 function toNumber(raw: string | undefined): number | undefined {
@@ -47,6 +56,7 @@ export default async function ListingsPage({
   const sort: Sort = isSort(params.sort) ? params.sort : "new";
   const term = isTerm(params.term) ? params.term : undefined;
   const verifiedOnly = params.verified === "1";
+  const view = params.view === "map" ? "map" : "list";
 
   const session = await auth();
   const loggedIn = Boolean(session?.user?.id);
@@ -79,6 +89,7 @@ export default async function ListingsPage({
       term,
       verified: verifiedOnly ? "1" : undefined,
       sort: sort === "new" ? undefined : sort,
+      view: view === "map" ? "map" : undefined,
       ...changes,
     };
     for (const [key, value] of Object.entries(merged)) {
@@ -102,12 +113,41 @@ export default async function ListingsPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
-      <h1 className="text-3xl font-bold tracking-[-0.025em] sm:text-[2.25rem]">
-        Find a place
-      </h1>
-      <p className="mt-1.5 text-ink-soft">
-        Subleases from students near campus, for any term.
-      </p>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-[-0.025em] sm:text-[2.25rem]">
+            Find a place
+          </h1>
+          <p className="mt-1.5 text-ink-soft">
+            Subleases from students near campus, for any term.
+          </p>
+        </div>
+        <nav
+          aria-label="View"
+          className="flex shrink-0 rounded-[10px] border border-line-strong p-0.5"
+        >
+          {(
+            [
+              { key: "list", label: "List", icon: LayoutGrid },
+              { key: "map", label: "Map", icon: MapIcon },
+            ] as const
+          ).map(({ key, label, icon: Icon }) => (
+            <Link
+              key={key}
+              href={hrefWith({ view: key === "map" ? "map" : undefined })}
+              aria-current={view === key ? "true" : undefined}
+              className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors ${
+                view === key
+                  ? "bg-ink text-surface"
+                  : "text-ink-soft hover:text-ink"
+              }`}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {label}
+            </Link>
+          ))}
+        </nav>
+      </div>
 
       <div className="mt-6">
         <SearchBar
@@ -116,6 +156,7 @@ export default async function ListingsPage({
           bedrooms={bedrooms}
           term={term}
           verified={verifiedOnly}
+          view={view === "map" ? "map" : undefined}
           sort={sort === "new" ? undefined : sort}
         />
       </div>
@@ -298,6 +339,41 @@ export default async function ListingsPage({
               </Link>
             )}
           </div>
+        </div>
+      ) : view === "map" ? (
+        <div className="mt-6">
+          <ListingsMap
+            listings={listings.flatMap((l) =>
+              l.lat !== null && l.lng !== null
+                ? [
+                    {
+                      id: l.id,
+                      title: l.title,
+                      pricePerMonth: l.pricePerMonth,
+                      neighborhood: l.neighborhood,
+                      imageUrl: l.imageUrl,
+                      lat: l.lat,
+                      lng: l.lng,
+                    },
+                  ]
+                : [],
+            )}
+          />
+          {(() => {
+            const missing = listings.filter((l) => l.lat === null).length;
+            return missing > 0 ? (
+              <p className="mt-3 text-sm text-ink-soft">
+                {missing} {missing === 1 ? "place doesn't" : "places don't"}{" "}
+                have a map pin yet.{" "}
+                <Link
+                  href={hrefWith({ view: undefined })}
+                  className="font-semibold text-brand-ink underline-offset-4 hover:underline"
+                >
+                  See the list
+                </Link>
+              </p>
+            ) : null;
+          })()}
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">

@@ -20,6 +20,10 @@ model Listing {
   bedrooms         Int
   bathrooms        Int
   distanceToCampus String
+  // Where the host dropped the pin. Shown only approximately (a circle, not
+  // an exact point) to protect the host's address. Null = no map pin.
+  lat              Float?
+  lng              Float?
   // Human-readable dates ("May 15 - Aug 15"). For listings posted with real
   // dates this is generated from startDate/endDate; older listings only have
   // the text.

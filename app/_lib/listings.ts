@@ -15,6 +15,8 @@ export type Listing = {
   bedrooms: number;
   bathrooms: number;
   distanceToCampus: string;
+  lat: number | null;
+  lng: number | null;
   availability: string;
   startDate: Date | null;
   endDate: Date | null;
@@ -47,6 +49,8 @@ function toListing(row: Row): Listing {
     bedrooms: row.bedrooms,
     bathrooms: row.bathrooms,
     distanceToCampus: row.distanceToCampus,
+    lat: row.lat,
+    lng: row.lng,
     availability: row.availability,
     startDate: row.startDate,
     endDate: row.endDate,

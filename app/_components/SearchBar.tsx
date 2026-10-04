@@ -33,6 +33,7 @@ export default function SearchBar({
   term,
   verified,
   sort,
+  view,
 }: {
   q?: string;
   maxPrice?: number;
@@ -40,6 +41,7 @@ export default function SearchBar({
   term?: string;
   verified?: boolean;
   sort?: string;
+  view?: string;
 }) {
   const prices =
     maxPrice !== undefined && !PRICE_STEPS.includes(maxPrice)
@@ -102,6 +104,7 @@ export default function SearchBar({
       {term && <input type="hidden" name="term" value={term} />}
       {verified && <input type="hidden" name="verified" value="1" />}
       {sort && <input type="hidden" name="sort" value={sort} />}
+      {view && <input type="hidden" name="view" value={view} />}
 
       <button
         type="submit"

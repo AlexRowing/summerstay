@@ -13,6 +13,7 @@ import {
   formatRange,
   fromDateInput,
   isAllowedPhotoUrl,
+  isNearCampus,
 } from "@/app/_lib/format";
 
 // What the listing form renders back: an error message, or nothing on success
@@ -35,6 +36,8 @@ type ListingFields = {
   amenities: string;
   imageUrl: string;
   photos: string[];
+  lat: number | null;
+  lng: number | null;
 };
 
 // Uploaded photos live in Vercel Blob; Unsplash links (older listings) don't.
@@ -120,6 +123,12 @@ function readListingFields(
 
   const photos = readPhotos(text("photos"));
 
+  // The map pin is optional; ignore anything that isn't near campus.
+  const lat = Number(text("lat"));
+  const lng = Number(text("lng"));
+  const hasPin =
+    text("lat") !== "" && text("lng") !== "" && isNearCampus(lat, lng);
+
   const amenities = text("amenities")
     .split(",")
     .map((item) => item.trim())
@@ -141,6 +150,8 @@ function readListingFields(
       amenities: JSON.stringify(amenities),
       imageUrl: photos[0] ?? PLACEHOLDER_IMAGE,
       photos,
+      lat: hasPin ? lat : null,
+      lng: hasPin ? lng : null,
     },
   };
 }
