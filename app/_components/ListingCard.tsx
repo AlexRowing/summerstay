@@ -12,6 +12,7 @@ export type CardData = Pick<
   | "neighborhood"
   | "distanceToCampus"
   | "availability"
+  | "startDate"
   | "bedrooms"
   | "bathrooms"
   | "pricePerMonth"
@@ -28,7 +29,7 @@ export default function ListingCard({
   listing: CardData;
   priority?: boolean;
 }) {
-  const term = termFor(listing.availability);
+  const term = termFor(listing.availability, listing.startDate);
   const fresh = listing.createdAt ? isNew(listing.createdAt) : false;
 
   const body = (

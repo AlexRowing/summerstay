@@ -4,7 +4,7 @@ import { ArrowRight, MapPin } from "lucide-react";
 import ListingCard from "@/app/_components/ListingCard";
 import SearchBar from "@/app/_components/SearchBar";
 import { button, size } from "@/app/_components/ui";
-import { formatPrice } from "@/app/_lib/format";
+import { TERMS, formatPrice } from "@/app/_lib/format";
 import {
   countListings,
   getFeaturedListings,
@@ -115,7 +115,19 @@ export default async function Home() {
           <div className="mt-8">
             <SearchBar />
           </div>
-          <p className="mt-4 text-[15px] text-ink-soft">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-[15px] text-ink-soft">Jump to</span>
+            {TERMS.map((term) => (
+              <Link
+                key={term}
+                href={`/listings?term=${encodeURIComponent(term)}`}
+                className="flex h-8 items-center rounded-full border border-line-strong px-3.5 text-sm font-semibold text-ink-soft transition-colors hover:border-ink-faint hover:text-ink"
+              >
+                {term}
+              </Link>
+            ))}
+          </div>
+          <p className="mt-6 text-[15px] text-ink-soft">
             Leaving town?{" "}
             <Link
               href="/host"

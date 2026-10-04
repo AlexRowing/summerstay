@@ -1,4 +1,5 @@
 import { prisma } from "@/app/_lib/db";
+import { termFor, type Term } from "@/app/_lib/format";
 import type {
   Listing as ListingRow,
   Prisma,
@@ -15,6 +16,9 @@ export type Listing = {
   bathrooms: number;
   distanceToCampus: string;
   availability: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  isTaken: boolean;
   description: string;
   amenities: string[];
   imageUrl: string;
@@ -35,12 +39,35 @@ function toListing(row: ListingRow): Listing {
     bathrooms: row.bathrooms,
     distanceToCampus: row.distanceToCampus,
     availability: row.availability,
+    startDate: row.startDate,
+    endDate: row.endDate,
+    isTaken: row.isTaken,
     description: row.description,
     amenities: JSON.parse(row.amenities) as string[],
     imageUrl: row.imageUrl,
     ownerId: row.ownerId,
     createdAt: row.createdAt,
   };
+}
+
+// A listing is "live" (shown in search and on the homepage) until the host
+// marks it taken or its end date passes. Listings without real dates (older
+// posts) stay live until taken.
+function liveWhere(): Prisma.ListingWhereInput {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  return {
+    isTaken: false,
+    OR: [{ endDate: null }, { endDate: { gte: today } }],
+  };
+}
+
+// Whether a listing has passed its end date.
+export function hasEnded(listing: Listing): boolean {
+  if (!listing.endDate) return false;
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  return listing.endDate < today;
 }
 
 export const SORTS = {
@@ -60,6 +87,7 @@ export type ListingFilters = {
   q?: string;
   maxPrice?: number;
   bedrooms?: number;
+  term?: Term;
   sort?: Sort;
 };
 
@@ -69,46 +97,56 @@ const orderBys: Record<Sort, Prisma.ListingOrderByWithRelationInput> = {
   "price-desc": { pricePerMonth: "desc" },
 };
 
-// Every listing, optionally narrowed by the search filters.
+// Every live listing, optionally narrowed by the search filters.
 export async function getListings(
   filters: ListingFilters = {},
 ): Promise<Listing[]> {
-  const where: Prisma.ListingWhereInput = {};
+  const and: Prisma.ListingWhereInput[] = [liveWhere()];
   if (filters.q) {
     const contains = { contains: filters.q, mode: "insensitive" as const };
-    where.OR = [
-      { city: contains },
-      { neighborhood: contains },
-      { title: contains },
-    ];
+    and.push({
+      OR: [{ city: contains }, { neighborhood: contains }, { title: contains }],
+    });
   }
   if (filters.maxPrice !== undefined) {
-    where.pricePerMonth = { lte: filters.maxPrice };
+    and.push({ pricePerMonth: { lte: filters.maxPrice } });
   }
   if (filters.bedrooms !== undefined) {
-    where.bedrooms = { gte: filters.bedrooms };
+    and.push({ bedrooms: { gte: filters.bedrooms } });
   }
 
   const rows = await prisma.listing.findMany({
-    where,
+    where: { AND: and },
     orderBy: orderBys[filters.sort ?? "new"],
   });
-  return rows.map(toListing);
+  const listings = rows.map(toListing);
+  // The term is derived from the dates (or the older free-text availability),
+  // so it's filtered here rather than in SQL. Listing counts are small.
+  return filters.term
+    ? listings.filter(
+        (l) => termFor(l.availability, l.startDate) === filters.term,
+      )
+    : listings;
 }
 
 export const HOME_CITY = "Blacksburg";
 
-// Listings for the homepage: Blacksburg first, newest first.
+// Live listings for the homepage: Blacksburg first, newest first.
 export async function getFeaturedListings(take: number): Promise<Listing[]> {
   const rows = await prisma.listing.findMany({
-    where: { city: { contains: HOME_CITY, mode: "insensitive" } },
+    where: {
+      AND: [
+        liveWhere(),
+        { city: { contains: HOME_CITY, mode: "insensitive" } },
+      ],
+    },
     orderBy: { createdAt: "desc" },
     take,
   });
   if (rows.length >= take) return rows.map(toListing);
   // Not enough local listings yet: top up with the newest from anywhere.
   const extra = await prisma.listing.findMany({
-    where: { id: { notIn: rows.map((r) => r.id) } },
+    where: { AND: [liveWhere(), { id: { notIn: rows.map((r) => r.id) } }] },
     orderBy: { createdAt: "desc" },
     take: take - rows.length,
   });
@@ -116,7 +154,7 @@ export async function getFeaturedListings(take: number): Promise<Listing[]> {
 }
 
 export async function countListings(): Promise<number> {
-  return prisma.listing.count();
+  return prisma.listing.count({ where: liveWhere() });
 }
 
 export type NeighborhoodSummary = {
@@ -125,11 +163,16 @@ export type NeighborhoodSummary = {
   fromPrice: number;
 };
 
-// Blacksburg neighborhoods that currently have listings, busiest first.
+// Blacksburg neighborhoods that currently have live listings, busiest first.
 export async function getNeighborhoods(): Promise<NeighborhoodSummary[]> {
   const groups = await prisma.listing.groupBy({
     by: ["neighborhood"],
-    where: { city: { contains: HOME_CITY, mode: "insensitive" } },
+    where: {
+      AND: [
+        liveWhere(),
+        { city: { contains: HOME_CITY, mode: "insensitive" } },
+      ],
+    },
     _count: { _all: true },
     _min: { pricePerMonth: true },
   });
@@ -176,7 +219,7 @@ export async function getListingsByOwner(ownerId: string): Promise<Listing[]> {
   return rows.map(toListing);
 }
 
-// Inquiry counts per listing for one owner, keyed by listing id.
+// Inquiry counts per listing, keyed by listing id.
 export async function getInquiryCounts(
   listingIds: string[],
 ): Promise<Record<string, number>> {
@@ -187,4 +230,46 @@ export async function getInquiryCounts(
     _count: { _all: true },
   });
   return Object.fromEntries(groups.map((g) => [g.listingId, g._count._all]));
+}
+
+export type InboxMessage = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  createdAt: Date;
+  unread: boolean;
+  listing: { id: string; title: string };
+};
+
+// Every message sent about one host's listings, newest first.
+export async function getInbox(ownerId: string): Promise<InboxMessage[]> {
+  const rows = await prisma.inquiry.findMany({
+    where: { listing: { ownerId } },
+    orderBy: { createdAt: "desc" },
+    include: { listing: { select: { id: true, title: true } } },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    message: r.message,
+    createdAt: r.createdAt,
+    unread: r.readAt === null,
+    listing: r.listing,
+  }));
+}
+
+export async function countUnread(ownerId: string): Promise<number> {
+  return prisma.inquiry.count({
+    where: { readAt: null, listing: { ownerId } },
+  });
+}
+
+// Mark every unread message for this host as read (they've opened the inbox).
+export async function markInboxRead(ownerId: string): Promise<void> {
+  await prisma.inquiry.updateMany({
+    where: { readAt: null, listing: { ownerId } },
+    data: { readAt: new Date() },
+  });
 }

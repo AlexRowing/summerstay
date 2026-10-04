@@ -3,7 +3,10 @@
 import { prisma } from "@/app/_lib/db";
 
 // What the contact form renders back: idle (fresh), sent (success), or error.
-export type InquiryState = { status: "idle" | "sent" | "error"; error?: string };
+export type InquiryState = {
+  status: "idle" | "sent" | "error";
+  error?: string;
+};
 
 // Server Action for the "Contact host" form. useActionState calls it as
 // (previousState, formData) and re-renders the form with whatever we return.
@@ -16,6 +19,9 @@ export async function createInquiry(
   const email = String(formData.get("email") ?? "").trim();
   const message = String(formData.get("message") ?? "").trim();
 
+  if (name.length > 100 || email.length > 200 || message.length > 2000) {
+    return { status: "error", error: "That message is too long." };
+  }
   if (!name || !email || !message) {
     return {
       status: "error",
@@ -29,7 +35,14 @@ export async function createInquiry(
 
   // Confirm the listing still exists before recording interest in it.
   const listing = await prisma.listing.findUnique({ where: { id: listingId } });
-  if (!listing) {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  if (
+    !listing ||
+    !listing.ownerId ||
+    listing.isTaken ||
+    (listing.endDate !== null && listing.endDate < today)
+  ) {
     return { status: "error", error: "This listing is no longer available." };
   }
 

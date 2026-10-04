@@ -46,10 +46,11 @@ export default function ContactForm({
       >
         <p className="flex items-center gap-2 font-semibold text-ink">
           <CircleCheck className="size-5 text-success" aria-hidden="true" />
-          Thanks for reaching out
+          Message sent
         </p>
         <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft">
-          We&apos;ve saved your interest in this listing along with your email.
+          Your message is in the host&apos;s SummerStay inbox. They&apos;ll
+          reply to the email you gave.
         </p>
       </div>
     );

@@ -7,7 +7,12 @@ import { auth } from "@/auth";
 import AccountNav from "@/app/account/AccountNav";
 import { button, size } from "@/app/_components/ui";
 import { formatPrice } from "@/app/_lib/format";
-import { getInquiryCounts, getListingsByOwner } from "@/app/_lib/listings";
+import {
+  countUnread,
+  getInquiryCounts,
+  getListingsByOwner,
+  hasEnded,
+} from "@/app/_lib/listings";
 
 export const metadata: Metadata = { title: "My listings" };
 
@@ -17,7 +22,10 @@ export default async function MyListingsPage() {
   if (!userId) redirect("/login?next=/account/listings");
 
   const listings = await getListingsByOwner(userId);
-  const inquiries = await getInquiryCounts(listings.map((l) => l.id));
+  const [inquiries, unread] = await Promise.all([
+    getInquiryCounts(listings.map((l) => l.id)),
+    countUnread(userId),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
@@ -30,7 +38,7 @@ export default async function MyListingsPage() {
           </Link>
         )}
       </div>
-      <AccountNav />
+      <AccountNav unread={unread} />
 
       {listings.length === 0 ? (
         <div className="mx-auto mt-16 max-w-sm text-center">
@@ -75,13 +83,29 @@ export default async function MyListingsPage() {
                     {formatPrice(listing.pricePerMonth)}/mo ·{" "}
                     {listing.availability}
                   </p>
-                  <p className="mt-1 text-sm font-medium">
+                  <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-xs font-bold ${
+                        listing.isTaken || hasEnded(listing)
+                          ? "bg-sunken text-ink-soft"
+                          : "bg-success-soft text-success"
+                      }`}
+                    >
+                      {listing.isTaken
+                        ? "Taken"
+                        : hasEnded(listing)
+                          ? "Dates passed"
+                          : "Live"}
+                    </span>
                     {count === 0 ? (
                       <span className="text-ink-faint">No messages yet</span>
                     ) : (
-                      <span className="text-success">
-                        {count} {count === 1 ? "person" : "people"} interested
-                      </span>
+                      <Link
+                        href="/account/inbox"
+                        className="text-brand-ink underline-offset-4 hover:underline"
+                      >
+                        {count} {count === 1 ? "message" : "messages"}
+                      </Link>
                     )}
                   </p>
                 </div>

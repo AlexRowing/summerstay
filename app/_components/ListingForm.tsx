@@ -5,7 +5,15 @@ import { Check } from "lucide-react";
 import type { HostFormState } from "@/app/host/actions";
 import type { Listing } from "@/app/_lib/listings";
 import { collectFieldErrors } from "@/app/_lib/form-validation";
-import { safeImageUrl } from "@/app/_lib/format";
+import {
+  TERMS,
+  formatRange,
+  fromDateInput,
+  nextTermDates,
+  safeImageUrl,
+  toDateInput,
+  type Term,
+} from "@/app/_lib/format";
 import ListingCard, { type CardData } from "@/app/_components/ListingCard";
 import {
   button,
@@ -38,13 +46,15 @@ const COMMON_AMENITIES = [
   "Private bathroom",
 ];
 
-// Quick fills for the availability field, one per academic term.
-const TERM_PRESETS = [
-  { label: "Summer", value: "May 15 - Aug 15" },
-  { label: "Fall semester", value: "Aug 20 - Dec 20" },
-  { label: "Spring semester", value: "Jan 10 - May 15" },
-  { label: "Winter break", value: "Dec 15 - Jan 15" },
-];
+// "May 15 - Aug 15, 2027" from the two date inputs, or a placeholder.
+function draftDates(start: string, end: string) {
+  const s = fromDateInput(start);
+  const e = fromDateInput(end);
+  return {
+    availability: s && e ? formatRange(s, e) : "Dates",
+    startDate: s,
+  };
+}
 
 function readDraft(form: HTMLFormElement): CardData {
   const data = new FormData(form);
@@ -57,7 +67,7 @@ function readDraft(form: HTMLFormElement): CardData {
     title: text("title") || "Your listing title",
     neighborhood: text("neighborhood") || "Neighborhood",
     distanceToCampus: text("distanceToCampus") || "Distance to campus",
-    availability: text("availability") || "Dates",
+    ...draftDates(text("startDate"), text("endDate")),
     bedrooms: num("bedrooms"),
     bathrooms: num("bathrooms"),
     pricePerMonth: num("pricePerMonth"),
@@ -104,6 +114,7 @@ export default function ListingForm({
     neighborhood: listing?.neighborhood || "Neighborhood",
     distanceToCampus: listing?.distanceToCampus || "Distance to campus",
     availability: listing?.availability || "Dates",
+    startDate: listing?.startDate ?? null,
     bedrooms: listing?.bedrooms ?? 0,
     bathrooms: listing?.bathrooms ?? 0,
     pricePerMonth: listing?.pricePerMonth ?? 0,
@@ -117,7 +128,22 @@ export default function ListingForm({
   const [otherAmenities, setOtherAmenities] = useState(
     initialAmenities.filter((a) => !COMMON_AMENITIES.includes(a)).join(", "),
   );
-  const [availability, setAvailability] = useState(listing?.availability ?? "");
+  const [startDate, setStartDate] = useState(toDateInput(listing?.startDate));
+  const [endDate, setEndDate] = useState(toDateInput(listing?.endDate));
+  const today = toDateInput(new Date());
+
+  function applyTerm(term: Term) {
+    const [start, end] = nextTermDates(term);
+    setStartDate(start);
+    setEndDate(end);
+    clearError("startDate");
+    clearError("endDate");
+    setDraft((d) => ({ ...d, ...draftDates(start, end) }));
+  }
+  const activeTerm = TERMS.find((t) => {
+    const [start, end] = nextTermDates(t);
+    return start === startDate && end === endDate;
+  });
 
   const amenities = [
     ...picked,
@@ -249,45 +275,72 @@ export default function ListingForm({
           description="Be specific. Clear dates get more replies."
         >
           <div>
-            <label htmlFor="availability" className={label}>
-              Available
-            </label>
-            <div className="mb-2.5 flex flex-wrap gap-2">
-              {TERM_PRESETS.map((preset) => (
+            <span className={label} id="dates-label">
+              Dates
+            </span>
+            <div
+              role="group"
+              aria-label="Fill in typical dates for a term"
+              className="mb-3 flex flex-wrap gap-2"
+            >
+              {TERMS.map((term) => (
                 <button
-                  key={preset.label}
+                  key={term}
                   type="button"
-                  onClick={(e) => {
-                    setAvailability(preset.value);
-                    clearError("availability");
-                    const form = e.currentTarget.form;
-                    // Let React commit the new value before reading the form.
-                    if (form)
-                      requestAnimationFrame(() => setDraft(readDraft(form)));
-                  }}
+                  aria-pressed={activeTerm === term}
+                  onClick={() => applyTerm(term)}
                   className={`h-8 rounded-lg border px-3 text-sm font-medium transition-colors ${
-                    availability === preset.value
+                    activeTerm === term
                       ? "border-brand-ink bg-brand-soft text-brand-ink"
                       : "border-line-strong text-ink-soft hover:border-ink-faint hover:text-ink"
                   }`}
                 >
-                  {preset.label}
+                  {term}
                 </button>
               ))}
             </div>
-            <input
-              {...bind("availability", "Availability")}
-              type="text"
-              required
-              value={availability}
-              onChange={(e) => setAvailability(e.target.value)}
-              placeholder="May 15 - Aug 15"
-              className={field}
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label
+                  htmlFor="startDate"
+                  className="mb-1 block text-[13px] text-ink-soft"
+                >
+                  Move-in
+                </label>
+                <input
+                  {...bind("startDate", "Move-in date")}
+                  type="date"
+                  required
+                  min={listing ? undefined : today}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={field}
+                />
+                {err("startDate")}
+              </div>
+              <div>
+                <label
+                  htmlFor="endDate"
+                  className="mb-1 block text-[13px] text-ink-soft"
+                >
+                  Move-out
+                </label>
+                <input
+                  {...bind("endDate", "Move-out date")}
+                  type="date"
+                  required
+                  min={startDate || today}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={field}
+                />
+                {err("endDate")}
+              </div>
+            </div>
             <p className={hint}>
-              Pick a term above, then adjust the exact dates.
+              Pick a term to fill typical dates, then adjust. The listing comes
+              down on its own after the move-out date.
             </p>
-            {err("availability")}
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
             <div>

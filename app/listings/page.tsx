@@ -4,6 +4,7 @@ import { SearchX, X } from "lucide-react";
 import ListingCard from "@/app/_components/ListingCard";
 import SearchBar from "@/app/_components/SearchBar";
 import { button, size } from "@/app/_components/ui";
+import { TERMS, isTerm } from "@/app/_lib/format";
 import { SORTS, getListings, isSort, type Sort } from "@/app/_lib/listings";
 
 export const metadata: Metadata = { title: "Find a place" };
@@ -13,6 +14,7 @@ type Params = {
   city?: string; // older links used ?city=
   maxPrice?: string;
   bedrooms?: string;
+  term?: string;
   sort?: string;
 };
 
@@ -33,10 +35,11 @@ export default async function ListingsPage({
   const maxPrice = toNumber(params.maxPrice);
   const bedrooms = toNumber(params.bedrooms);
   const sort: Sort = isSort(params.sort) ? params.sort : "new";
+  const term = isTerm(params.term) ? params.term : undefined;
 
-  const listings = await getListings({ q, maxPrice, bedrooms, sort });
+  const listings = await getListings({ q, maxPrice, bedrooms, term, sort });
   const isFiltered = Boolean(
-    q || maxPrice !== undefined || bedrooms !== undefined,
+    q || maxPrice !== undefined || bedrooms !== undefined || term,
   );
 
   // Build a /listings URL from the current params with some keys changed.
@@ -48,6 +51,7 @@ export default async function ListingsPage({
       q,
       maxPrice: maxPrice?.toString(),
       bedrooms: bedrooms?.toString(),
+      term,
       sort: sort === "new" ? undefined : sort,
       ...changes,
     };
@@ -84,9 +88,34 @@ export default async function ListingsPage({
           q={q}
           maxPrice={maxPrice}
           bedrooms={bedrooms}
+          term={term}
           sort={sort === "new" ? undefined : sort}
         />
       </div>
+
+      {/* Term tabs: the first thing most students know is *when*. */}
+      <nav
+        aria-label="Term"
+        className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
+      >
+        {[undefined, ...TERMS].map((t) => {
+          const active = term === t;
+          return (
+            <Link
+              key={t ?? "any"}
+              href={hrefWith({ term: t })}
+              aria-current={active ? "true" : undefined}
+              className={`flex h-9 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition-colors ${
+                active
+                  ? "border-ink bg-ink text-surface"
+                  : "border-line-strong text-ink-soft hover:border-ink-faint hover:text-ink"
+              }`}
+            >
+              {t ?? "Any term"}
+            </Link>
+          );
+        })}
+      </nav>
 
       {/* Toolbar: result count + active filters on the left, sort on the
           right. Sort options are plain links so they work without JS. */}

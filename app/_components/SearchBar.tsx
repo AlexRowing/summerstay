@@ -30,11 +30,13 @@ export default function SearchBar({
   q,
   maxPrice,
   bedrooms,
+  term,
   sort,
 }: {
   q?: string;
   maxPrice?: number;
   bedrooms?: number;
+  term?: string;
   sort?: string;
 }) {
   const prices =
@@ -94,6 +96,8 @@ export default function SearchBar({
         <Chevron />
       </label>
 
+      {/* Keep the term tab and sort order when searching again. */}
+      {term && <input type="hidden" name="term" value={term} />}
       {sort && <input type="hidden" name="sort" value={sort} />}
 
       <button

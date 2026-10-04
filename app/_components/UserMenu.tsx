@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { House, LogOut, Plus, UserRound } from "lucide-react";
+import { House, Inbox, LogOut, Plus, UserRound } from "lucide-react";
 import { signOutAction } from "@/app/_lib/auth-actions";
 
 const itemClass =
@@ -14,9 +14,11 @@ const iconClass = "size-4 text-ink-soft";
 export default function UserMenu({
   name,
   email,
+  unread,
 }: {
   name: string | null;
   email: string;
+  unread: number;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -50,11 +52,21 @@ export default function UserMenu({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={
+          unread > 0
+            ? `Account menu, ${unread} unread messages`
+            : "Account menu"
+        }
         className="flex items-center gap-2 rounded-full p-0.5 transition-colors hover:bg-sunken sm:pr-3"
       >
-        <span className="flex size-9 items-center justify-center rounded-full bg-brand-soft text-[15px] font-bold text-brand-ink">
+        <span className="relative flex size-9 items-center justify-center rounded-full bg-brand-soft text-[15px] font-bold text-brand-ink">
           {initial}
+          {unread > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-surface bg-accent"
+            />
+          )}
         </span>
         <span className="hidden max-w-[9rem] truncate text-[15px] font-medium sm:block">
           {name?.split(" ")[0] || displayName}
@@ -80,6 +92,19 @@ export default function UserMenu({
             onClick={close}
           >
             <Plus className={iconClass} /> List your place
+          </Link>
+          <Link
+            href="/account/inbox"
+            role="menuitem"
+            className={itemClass}
+            onClick={close}
+          >
+            <Inbox className={iconClass} /> Inbox
+            {unread > 0 && (
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-xs font-bold text-on-brand">
+                {unread}
+              </span>
+            )}
           </Link>
           <Link
             href="/account/listings"

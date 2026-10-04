@@ -4,10 +4,10 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "The terms that govern your use of SummerStay, a student-to-student marketplace for summer sublets.",
+    "The terms that govern your use of SummerStay, a student-to-student marketplace for subleases.",
 };
 
-const LAST_UPDATED = "July 18, 2026";
+const LAST_UPDATED = "October 3, 2026";
 
 export default function TermsPage() {
   return (
@@ -20,8 +20,8 @@ export default function TermsPage() {
       <div className="mt-10 max-w-[68ch] space-y-10 text-[17px] leading-relaxed text-ink-soft">
         <p>
           Welcome to SummerStay. These terms cover your use of our platform,
-          where students post and browse summer sublets near campus. By creating
-          an account or using the site, you agree to what follows.
+          where students post and browse subleases near campus. By creating an
+          account or using the site, you agree to what follows.
         </p>
 
         <section className="space-y-3">
@@ -29,10 +29,10 @@ export default function TermsPage() {
             Who can use SummerStay
           </h2>
           <p>
-            SummerStay is built for students looking to sublet housing for the
-            summer. You need an account to post a listing, and you are
-            responsible for keeping your login secure. You agree to provide
-            accurate information and to use the platform only for lawful
+            SummerStay is built for students looking to sublet housing for a
+            summer, semester, or break. You need an account to post a listing,
+            and you are responsible for keeping your login secure. You agree to
+            provide accurate information and to use the platform only for lawful
             purposes.
           </p>
         </section>

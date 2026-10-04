@@ -20,7 +20,15 @@ model Listing {
   bedrooms         Int
   bathrooms        Int
   distanceToCampus String
+  // Human-readable dates ("May 15 - Aug 15"). For listings posted with real
+  // dates this is generated from startDate/endDate; older listings only have
+  // the text.
   availability     String
+  startDate        DateTime?
+  endDate          DateTime?
+  // Set by the host once someone has taken the place. Taken listings drop out
+  // of search but stay viewable at their URL.
+  isTaken          Boolean  @default(false)
   description      String
   // Stored as a JSON string and parsed in app/_lib/listings.ts. Kept as-is
   // through the SQLite->Postgres migration to keep the schema identical; a
@@ -56,4 +64,6 @@ model Inquiry {
   email     String
   message   String
   createdAt DateTime @default(now())
+  // When the host first saw it in their inbox; null means unread.
+  readAt    DateTime?
 }

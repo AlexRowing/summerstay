@@ -4,10 +4,10 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How SummerStay collects, uses, and protects your information as a student summer-sublet marketplace.",
+    "How SummerStay collects, uses, and protects your information as a student sublease marketplace.",
 };
 
-const LAST_UPDATED = "July 18, 2026";
+const LAST_UPDATED = "October 3, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
 
       <div className="mt-10 max-w-[68ch] space-y-10 text-[17px] leading-relaxed text-ink-soft">
         <p>
-          SummerStay is a student-to-student marketplace for summer sublets near
+          SummerStay is a student-to-student marketplace for subleases near
           campus. This policy explains what we collect, why we collect it, and
           the choices you have. We aim to collect only what we need to run the
           platform, and we do not sell your personal information.
@@ -33,10 +33,10 @@ export default function PrivacyPage() {
           <ul className="ml-5 list-disc space-y-2">
             <li>
               <span className="font-medium text-ink">Account details.</span>{" "}
-              When you sign up, our authentication provider, Clerk, handles your
-              login and stores credentials such as your email address and name.
-              We receive a user identifier and basic profile details from Clerk
-              so we can associate listings and messages with your account.
+              When you sign up, we store your name (if you give one), your email
+              address, and your password. Passwords are never stored in plain
+              text; we keep only a one-way bcrypt hash. Your session is kept in
+              a secure, http-only cookie.
             </li>
             <li>
               <span className="font-medium text-ink">Listing content.</span>{" "}
@@ -44,14 +44,14 @@ export default function PrivacyPage() {
               the title, description, location, dates, price, and amenities.
             </li>
             <li>
-              <span className="font-medium text-ink">Photos.</span> Images you
-              upload for a listing are stored through our file-hosting provider,
-              UploadThing.
+              <span className="font-medium text-ink">Photos.</span> Listing
+              photos are linked from the image address you provide.
             </li>
             <li>
               <span className="font-medium text-ink">Inquiries.</span> When you
               contact a host about a listing, we store the name, email, and
-              message you submit so the host can respond.
+              message you submit so the host can see it in their inbox and reply
+              to you by email.
             </li>
           </ul>
         </section>
@@ -91,9 +91,9 @@ export default function PrivacyPage() {
               <span className="font-medium text-ink">
                 With service providers.
               </span>{" "}
-              We rely on Clerk for authentication, UploadThing for image
-              hosting, and Neon for our database. These providers process data
-              on our behalf so the platform can function.
+              We rely on Vercel to host the site and Neon for our database.
+              These providers process data on our behalf so the platform can
+              function.
             </li>
             <li>
               <span className="font-medium text-ink">
@@ -112,10 +112,9 @@ export default function PrivacyPage() {
             Data storage
           </h2>
           <p>
-            Listing and inquiry data is stored in a Neon Postgres database, and
-            uploaded images are stored with UploadThing. We keep your
-            information for as long as your account is active or as needed to
-            operate the platform.
+            Account, listing, and inquiry data is stored in a Neon Postgres
+            database. We keep your information for as long as your account is
+            active or as needed to operate the platform.
           </p>
         </section>
 
@@ -130,8 +129,8 @@ export default function PrivacyPage() {
               your account.
             </li>
             <li>
-              You can manage your login details through Clerk, and you can ask
-              us to delete your account and its associated listings.
+              You can ask us to delete your account and its associated listings
+              at any time through our contact page.
             </li>
           </ul>
         </section>

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/app/_lib/db";
-import { safeImageUrl } from "@/app/_lib/format";
+import { formatRange, fromDateInput, safeImageUrl } from "@/app/_lib/format";
 
 // What the listing form renders back: an error message, or nothing on success
 // (a successful submit redirects instead of returning).
@@ -20,6 +20,8 @@ type ListingFields = {
   bathrooms: number;
   distanceToCampus: string;
   availability: string;
+  startDate: Date;
+  endDate: Date;
   description: string;
   amenities: string;
   imageUrl: string;
@@ -36,17 +38,9 @@ function readListingFields(
   const city = text("city");
   const neighborhood = text("neighborhood");
   const distanceToCampus = text("distanceToCampus");
-  const availability = text("availability");
   const description = text("description");
 
-  if (
-    !title ||
-    !city ||
-    !neighborhood ||
-    !distanceToCampus ||
-    !availability ||
-    !description
-  ) {
+  if (!title || !city || !neighborhood || !distanceToCampus || !description) {
     return { error: "Please fill in every required field." };
   }
 
@@ -70,6 +64,20 @@ function readListingFields(
     return { error: "Price, bedrooms, and bathrooms must be valid numbers." };
   }
 
+  const startDate = fromDateInput(text("startDate"));
+  const endDate = fromDateInput(text("endDate"));
+  if (!startDate || !endDate) {
+    return { error: "Add a move-in and a move-out date." };
+  }
+  if (endDate <= startDate) {
+    return { error: "The move-out date has to be after the move-in date." };
+  }
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  if (endDate < today) {
+    return { error: "Those dates have already passed." };
+  }
+
   const amenities = text("amenities")
     .split(",")
     .map((item) => item.trim())
@@ -84,7 +92,9 @@ function readListingFields(
       bedrooms: Math.round(bedrooms),
       bathrooms: Math.round(bathrooms),
       distanceToCampus,
-      availability,
+      availability: formatRange(startDate, endDate),
+      startDate,
+      endDate,
       description,
       amenities: JSON.stringify(amenities),
       imageUrl: safeImageUrl(text("imageUrl")),
@@ -159,4 +169,25 @@ export async function deleteListing(formData: FormData): Promise<void> {
   revalidatePath("/");
   revalidatePath("/listings");
   redirect("/listings");
+}
+
+// Mark a listing taken (or available again). Owner only. Taken listings drop
+// out of search but stay viewable at their URL.
+export async function setTaken(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not authenticated.");
+
+  const id = String(formData.get("id") ?? "");
+  const taken = formData.get("taken") === "true";
+  const existing = await prisma.listing.findUnique({ where: { id } });
+  if (!existing || existing.ownerId !== session.user.id) {
+    throw new Error("You are not allowed to change this listing.");
+  }
+
+  await prisma.listing.update({ where: { id }, data: { isTaken: taken } });
+
+  revalidatePath("/");
+  revalidatePath("/listings");
+  revalidatePath(`/listings/${id}`);
+  revalidatePath("/account/listings");
 }

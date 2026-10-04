@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/app/_lib/db";
+import { countUnread } from "@/app/_lib/listings";
 import { signOutAction } from "@/app/_lib/auth-actions";
 import AccountNav from "@/app/account/AccountNav";
 import { button, size } from "@/app/_components/ui";
@@ -18,6 +19,7 @@ export default async function AccountPage() {
     include: { _count: { select: { listings: true } } },
   });
   if (!user) redirect("/login");
+  const unread = await countUnread(userId);
 
   const memberSince = user.createdAt.toLocaleDateString("en-US", {
     year: "numeric",
@@ -38,7 +40,7 @@ export default async function AccountPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
       <h1 className="text-3xl font-bold tracking-[-0.025em]">Your account</h1>
-      <AccountNav />
+      <AccountNav unread={unread} />
 
       <div className="mt-8 flex items-center gap-4">
         <span className="flex size-16 items-center justify-center rounded-full bg-brand-soft text-2xl font-bold text-brand-ink">

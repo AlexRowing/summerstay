@@ -5,9 +5,11 @@ import Logo from "@/app/_components/Logo";
 import NavLink from "@/app/_components/NavLink";
 import UserMenu from "@/app/_components/UserMenu";
 import { button, size } from "@/app/_components/ui";
+import { countUnread } from "@/app/_lib/listings";
 
 export default async function Navbar() {
   const session = await auth();
+  const unread = session?.user?.id ? await countUnread(session.user.id) : 0;
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-md">
@@ -39,6 +41,7 @@ export default async function Navbar() {
               <UserMenu
                 name={session.user.name ?? null}
                 email={session.user.email ?? ""}
+                unread={unread}
               />
             </>
           ) : (

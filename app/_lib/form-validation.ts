@@ -21,7 +21,12 @@ function messageFor(el: FormField): string | null {
     }
     return "That value doesn't look right.";
   }
-  if (v.rangeUnderflow) return `${label} can't be negative.`;
+  if (v.rangeUnderflow) {
+    if (el instanceof HTMLInputElement && el.type === "date") {
+      return `${label} is too early. Pick a later date.`;
+    }
+    return `${label} can't be negative.`;
+  }
   if (v.tooShort) return `${label} is too short.`;
   return "Please check this field.";
 }

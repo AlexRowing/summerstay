@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Check,
   ChevronLeft,
+  CircleCheck,
   Footprints,
   Pencil,
   ShieldCheck,
@@ -16,7 +17,12 @@ import ContactForm from "@/app/_components/ContactForm";
 import DeleteListingButton from "@/app/_components/DeleteListingButton";
 import { button, size } from "@/app/_components/ui";
 import { formatPrice, shortDistance, termFor } from "@/app/_lib/format";
-import { getListingById, getListingWithHost } from "@/app/_lib/listings";
+import { setTaken } from "@/app/host/actions";
+import {
+  getListingById,
+  getListingWithHost,
+  hasEnded,
+} from "@/app/_lib/listings";
 
 export async function generateMetadata({
   params,
@@ -52,7 +58,9 @@ export default async function ListingDetailPage({
 
   const session = await auth();
   const isOwner = !!session?.user && session.user.id === listing.ownerId;
-  const term = termFor(listing.availability);
+  const term = termFor(listing.availability, listing.startDate);
+  const ended = hasEnded(listing);
+  const unavailable = listing.isTaken || ended;
 
   const facts = [
     {
@@ -92,6 +100,36 @@ export default async function ListingDetailPage({
           {term && <> · {term} sublease</>}
         </p>
       </div>
+
+      {unavailable && (
+        <div
+          role="status"
+          className="mt-5 flex items-start gap-3 rounded-xl bg-sunken px-4 py-3.5"
+        >
+          <CircleCheck
+            className="mt-0.5 size-5 shrink-0 text-ink-soft"
+            aria-hidden="true"
+          />
+          <p className="text-[15px]">
+            <span className="font-semibold">
+              {listing.isTaken
+                ? "This place has been taken."
+                : "These dates have passed."}
+            </span>{" "}
+            <span className="text-ink-soft">
+              It&apos;s no longer in search.{" "}
+              {!isOwner && (
+                <Link
+                  href={`/listings?q=${encodeURIComponent(listing.neighborhood)}`}
+                  className="font-semibold text-brand-ink underline-offset-4 hover:underline"
+                >
+                  See other places in {listing.neighborhood}
+                </Link>
+              )}
+            </span>
+          </p>
+        </div>
+      )}
 
       <div className="relative mt-6 aspect-[4/3] overflow-hidden rounded-2xl bg-sunken sm:aspect-[2/1]">
         <Image
@@ -205,8 +243,28 @@ export default async function ListingDetailPage({
             {isOwner ? (
               <div className="mt-6 space-y-3 border-t border-line pt-6">
                 <p className="text-[15px] text-ink-soft">
-                  This is your listing.
+                  This is your listing.{" "}
+                  {listing.isTaken
+                    ? "It's marked as taken and hidden from search."
+                    : ended
+                      ? "Its dates have passed, so it's hidden from search."
+                      : "It's live in search."}
                 </p>
+                <form action={setTaken}>
+                  <input type="hidden" name="id" value={listing.id} />
+                  <input
+                    type="hidden"
+                    name="taken"
+                    value={listing.isTaken ? "false" : "true"}
+                  />
+                  <button
+                    type="submit"
+                    className={`${listing.isTaken ? button.secondary : button.primary} ${size.md} w-full`}
+                  >
+                    <CircleCheck className="size-4" aria-hidden="true" />
+                    {listing.isTaken ? "Mark as available" : "Mark as taken"}
+                  </button>
+                </form>
                 <Link
                   href={`/listings/${listing.id}/edit`}
                   className={`${button.secondary} ${size.md} w-full`}
@@ -215,6 +273,32 @@ export default async function ListingDetailPage({
                   Edit listing
                 </Link>
                 <DeleteListingButton id={listing.id} />
+              </div>
+            ) : !host ? (
+              <div className="mt-6 border-t border-line pt-6">
+                <p className="font-semibold">Sample listing</p>
+                <p className="mt-1 text-[15px] leading-relaxed text-ink-soft">
+                  This place was added to show how SummerStay works, so
+                  there&apos;s no host to message.
+                </p>
+                <Link
+                  href="/listings"
+                  className={`${button.secondary} ${size.md} mt-4 w-full`}
+                >
+                  Browse other places
+                </Link>
+              </div>
+            ) : unavailable ? (
+              <div className="mt-6 border-t border-line pt-6">
+                <p className="text-[15px] text-ink-soft">
+                  This listing isn&apos;t taking messages anymore.
+                </p>
+                <Link
+                  href="/listings"
+                  className={`${button.primary} ${size.md} mt-4 w-full`}
+                >
+                  Find another place
+                </Link>
               </div>
             ) : (
               <div className="mt-6 border-t border-line pt-6">
@@ -231,7 +315,7 @@ export default async function ListingDetailPage({
 
       {/* Phone-only action bar: price and the contact button stay in reach
           without scrolling to the form. Owners don't see it. */}
-      {!isOwner && (
+      {!isOwner && !unavailable && host && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md lg:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
             <div>
