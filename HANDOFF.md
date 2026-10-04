@@ -27,7 +27,8 @@ Design direction and rules live in `PRODUCT.md` (strategy) and `DESIGN.md` (visu
 - **Account**: `/account/inbox` (messages, marked read on open, unread badge in the navbar menu), `/account/listings` (status and message counts), `/account` (profile plus Verified Hokie card).
 - **Verified Hokie**: the user enters a `@vt.edu` address, gets an email link to `/verify?token=…`, and presses Confirm (a button, so email scanners can't use up the link). Sets `User.vtEmail` and `vtVerifiedAt`.
 - **Password reset**: `/forgot-password` always shows success (no account enumeration) and emails a 1-hour link to `/reset-password?token=…`.
-- **Auth**: signup and login support a safe `?next=` redirect (same-site paths only).
+- **Auth**: signup and login support a safe `?next=` redirect (same-site paths only). Logins are throttled at 8 failures per email per 15 minutes (`LoginAttempt` table). The signup form has a honeypot field. Sessions re-check the database every 5 minutes (`auth.ts` jwt callback) and end if the account is gone or `User.sessionVersion` changed; a password reset bumps it, which signs out every other device.
+- **Delete account** (Profile → Delete account, password required): removes the user's listings (and their Blob photos), conversations, saved places, alerts and tokens.
 - **Map**: hosts can drop an optional pin (`LocationPicker`, stored as `Listing.lat`/`lng`, only accepted near campus). Browse has a List/Map toggle (`?view=map`) with price-pill markers and popups. The listing page shows an area circle plus the Drillfield. Public maps only use coordinates rounded to about 100 m (`approximate()`). Built on Leaflet with OpenStreetMap tiles (free with attribution under OSM's tile policy; if traffic grows, switch to a paid tile provider in `app/_components/map/leaflet.ts`). Dark mode inverts the tiles in CSS. Sample listings have approximate neighborhood coordinates.
 - **Saved places**: a heart on cards and the listing page (optimistic, using a server action). The list is at `/account/saved`.
 - **Search alerts**: "Turn on alerts" on the browse page saves the current filters (max 10 per user). When a listing is created, `app/_lib/alerts.ts` emails every matching user once (never the poster). Alerts can be managed on `/account/saved`.
@@ -42,7 +43,7 @@ Design direction and rules live in `PRODUCT.md` (strategy) and `DESIGN.md` (visu
 - `SavedListing` (user + listing, composite key), `SearchAlert` (q, maxPrice, bedrooms, term, verified), and `Report` (reason, details, optional email, resolvedAt). `Listing.removedAt` marks a moderator takedown.
 - `EmailToken`: one-time links. Only a SHA-256 hash is stored, with purpose `verify_vt` or `reset_password`. Cascades with the user.
 
-`amenities` is still a JSON string (a SQLite carryover) and is parsed in `app/_lib/listings.ts`.
+`amenities` is a native `text[]` (it was converted from a JSON string on 2026-10-05).
 
 **Local dev and production share the same Neon database.** Migrations run locally hit production. Keep them additive. `prisma migrate dev` sometimes refuses to run in non-interactive shells. The workaround: `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script` into a new migration folder, then `prisma migrate deploy`.
 
@@ -69,7 +70,13 @@ Email links in production always use `SITE_URL`, never the request Host header, 
 - Server actions: `app/host/actions.ts` (listings), `app/listings/actions.ts` (inquiries), `app/_lib/auth-actions.ts` (auth and reset), `app/account/actions.ts` (VT verification).
 - `app/api/upload/route.ts`: issues Vercel Blob client-upload tokens (signed-in users only, JPG/PNG/WebP, 10 MB).
 
-## 7. Gotchas
+## 7. Security notes
+
+- Next.js was upgraded to 16.3.8 and next-auth to 5.0.0-beta.32 on 2026-10-05 to patch critical advisories (RCE in image optimization and `next/og`, and an Auth.js email-normalization bypass). Re-run `npm audit --omit=dev` before each launch push. The remaining "high" items are inside Prisma's CLI tooling, not in code the live site runs; the only offered fix is a major downgrade, so they were left alone.
+- `next.config.ts` sends `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy` and `Permissions-Policy`, and hides `X-Powered-By`.
+- `app/sitemap.ts` and `app/robots.ts` keep private and one-time pages out of search engines.
+
+## 8. Gotchas
 
 - Don't run `npm run build` while `next dev` is running; it corrupts `.next`.
 - The project folder is synced by OneDrive, which sometimes makes the dev server flaky or deletes `.claude/launch.json`.
@@ -77,6 +84,5 @@ Email links in production always use `SITE_URL`, never the request Host header, 
 - `next/image` only loads `images.unsplash.com` and `*.public.blob.vercel-storage.com` (see `next.config.ts`).
 - Commit style: one line, no body, no co-author lines.
 
-## 8. Ideas not built yet
+## 9. Ideas not built yet
 
-- Moving `amenities` to a native Postgres array.
