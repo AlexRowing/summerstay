@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, SearchX, X } from "lucide-react";
+import { BadgeCheck, BellRing, SearchX, X } from "lucide-react";
+import { createSearchAlert } from "@/app/account/actions";
 import ListingCard from "@/app/_components/ListingCard";
 import SearchBar from "@/app/_components/SearchBar";
 import { button, size } from "@/app/_components/ui";
 import { TERMS, isTerm } from "@/app/_lib/format";
-import { SORTS, getListings, isSort, type Sort } from "@/app/_lib/listings";
+import { auth } from "@/auth";
+import {
+  SORTS,
+  getListings,
+  getSavedIds,
+  isSort,
+  type Sort,
+} from "@/app/_lib/listings";
 
 export const metadata: Metadata = { title: "Find a place" };
 
@@ -17,6 +25,7 @@ type Params = {
   term?: string;
   verified?: string;
   sort?: string;
+  alert?: string;
 };
 
 function toNumber(raw: string | undefined): number | undefined {
@@ -39,6 +48,9 @@ export default async function ListingsPage({
   const term = isTerm(params.term) ? params.term : undefined;
   const verifiedOnly = params.verified === "1";
 
+  const session = await auth();
+  const loggedIn = Boolean(session?.user?.id);
+  const savedIds = await getSavedIds(session?.user?.id);
   const listings = await getListings({
     q,
     maxPrice,
@@ -199,6 +211,64 @@ export default async function ListingsPage({
         </nav>
       </div>
 
+      {/* Saved-search alert: emails when a new place matches these filters. */}
+      <form
+        action={createSearchAlert}
+        className="mt-4 flex flex-col gap-3 rounded-xl bg-sunken px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        {q && <input type="hidden" name="q" value={q} />}
+        {maxPrice !== undefined && (
+          <input type="hidden" name="maxPrice" value={maxPrice} />
+        )}
+        {bedrooms !== undefined && (
+          <input type="hidden" name="bedrooms" value={bedrooms} />
+        )}
+        {term && <input type="hidden" name="term" value={term} />}
+        {verifiedOnly && <input type="hidden" name="verified" value="1" />}
+        <p
+          className="flex items-start gap-2.5 text-[15px]"
+          role={params.alert ? "status" : undefined}
+        >
+          <BellRing
+            className="mt-0.5 size-[18px] shrink-0 text-brand-ink"
+            aria-hidden="true"
+          />
+          {params.alert === "saved" ? (
+            <span>
+              <span className="font-semibold">Alert on.</span>{" "}
+              <span className="text-ink-soft">
+                We&apos;ll email you when a new place matches this search.
+              </span>
+            </span>
+          ) : params.alert === "full" ? (
+            <span className="text-ink-soft">
+              You have the maximum of 10 alerts. Remove one to add another.
+            </span>
+          ) : (
+            <span className="text-ink-soft">
+              {listings.length === 0
+                ? "Nothing yet. Get an email the moment a matching place is posted."
+                : "Get an email when a new place matches this search."}
+            </span>
+          )}
+        </p>
+        {params.alert ? (
+          <Link
+            href="/account/saved"
+            className={`${button.secondary} ${size.sm} shrink-0`}
+          >
+            Manage alerts
+          </Link>
+        ) : (
+          <button
+            type="submit"
+            className={`${button.secondary} ${size.sm} shrink-0`}
+          >
+            Turn on alerts
+          </button>
+        )}
+      </form>
+
       {listings.length === 0 ? (
         <div className="mx-auto mt-16 max-w-md text-center">
           <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-sunken text-ink-soft">
@@ -232,7 +302,12 @@ export default async function ListingsPage({
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {listings.map((listing, i) => (
-            <ListingCard key={listing.id} listing={listing} priority={i < 3} />
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              priority={i < 3}
+              save={{ saved: savedIds.has(listing.id), loggedIn }}
+            />
           ))}
         </div>
       )}

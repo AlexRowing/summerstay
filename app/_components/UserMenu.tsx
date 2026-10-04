@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { House, Inbox, LogOut, Plus, UserRound } from "lucide-react";
+import {
+  Heart,
+  House,
+  Inbox,
+  LogOut,
+  Plus,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { signOutAction } from "@/app/_lib/auth-actions";
 
 const itemClass =
@@ -16,10 +24,12 @@ export default function UserMenu({
   name,
   email,
   unread: initialUnread,
+  isAdmin = false,
 }: {
   name: string | null;
   email: string;
   unread: number;
+  isAdmin?: boolean;
 }) {
   // Opening the inbox marks everything read, but the navbar was rendered in
   // the same request, so don't show a stale count while on that page.
@@ -112,6 +122,14 @@ export default function UserMenu({
             )}
           </Link>
           <Link
+            href="/account/saved"
+            role="menuitem"
+            className={itemClass}
+            onClick={close}
+          >
+            <Heart className={iconClass} /> Saved
+          </Link>
+          <Link
             href="/account/listings"
             role="menuitem"
             className={itemClass}
@@ -127,6 +145,16 @@ export default function UserMenu({
           >
             <UserRound className={iconClass} /> Account
           </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              role="menuitem"
+              className={itemClass}
+              onClick={close}
+            >
+              <ShieldCheck className={iconClass} /> Moderation
+            </Link>
+          )}
           <div className="my-1 h-px bg-line" />
           <form action={signOutAction}>
             <button type="submit" role="menuitem" className={itemClass}>

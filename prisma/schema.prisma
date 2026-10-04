@@ -29,6 +29,9 @@ model Listing {
   // Set by the host once someone has taken the place. Taken listings drop out
   // of search but stay viewable at their URL.
   isTaken          Boolean  @default(false)
+  // Set when a moderator takes the listing down after a report. Removed
+  // listings disappear for everyone except the owner and admins.
+  removedAt        DateTime?
   description      String
   // Stored as a JSON string and parsed in app/_lib/listings.ts. Kept as-is
   // through the SQLite->Postgres migration to keep the schema identical; a
@@ -41,6 +44,8 @@ model Listing {
   photos           String[] @default([])
   createdAt        DateTime @default(now())
   inquiries        Inquiry[]
+  savedBy          SavedListing[]
+  reports          Report[]
   // Who posted this listing. Nullable because the seeded starter listings have
   // no owner; listings created through the form after auth get an owner.
   owner            User?     @relation(fields: [ownerId], references: [id])
@@ -60,6 +65,49 @@ model User {
   vtEmail      String?   @unique
   vtVerifiedAt DateTime?
   emailTokens  EmailToken[]
+  saved        SavedListing[]
+  searchAlerts SearchAlert[]
+}
+
+// A listing someone hearted.
+model SavedListing {
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId String
+  createdAt DateTime @default(now())
+
+  @@id([userId, listingId])
+}
+
+// "Email me when a new place matches this search." The filters mirror the
+// browse page's URL params.
+model SearchAlert {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  q         String?
+  maxPrice  Int?
+  bedrooms  Int?
+  term      String?
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Someone flagged a listing. Moderators review these on /admin.
+model Report {
+  id         String    @id @default(cuid())
+  listing    Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId  String
+  reason     String    // "scam" | "inaccurate" | "unavailable" | "inappropriate" | "other"
+  details    String?
+  email      String?
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([resolvedAt])
 }
 
 // One-time links sent by email: verifying a @vt.edu address, or resetting a

@@ -27,12 +27,16 @@ Design direction and rules live in `PRODUCT.md` (strategy) and `DESIGN.md` (visu
 - **Verified Hokie**: the user enters a `@vt.edu` address, gets an email link to `/verify?token=…`, and presses Confirm (a button, so email scanners can't use up the link). Sets `User.vtEmail` and `vtVerifiedAt`.
 - **Password reset**: `/forgot-password` always shows success (no account enumeration) and emails a 1-hour link to `/reset-password?token=…`.
 - **Auth**: signup and login support a safe `?next=` redirect (same-site paths only).
+- **Saved places**: a heart on cards and the listing page (optimistic, using a server action). The list is at `/account/saved`.
+- **Search alerts**: "Turn on alerts" on the browse page saves the current filters (max 10 per user). When a listing is created, `app/_lib/alerts.ts` emails every matching user once (never the poster). Alerts can be managed on `/account/saved`.
+- **Reports and moderation**: "Report this listing" (no login; honeypot; at most 20 open reports per listing) stores a `Report` and emails `ADMIN_EMAILS`. `/admin` (moderators only; a 404 for everyone else) lists open reports with Dismiss/Take down, plus every listing with Take down/Restore. Taken-down listings (`removedAt`) 404 for everyone except the owner (who sees a banner) and admins.
 
 ## 4. Data model (`prisma/schema.prisma`)
 
 - `Listing`: core fields plus `startDate`/`endDate` (nullable; older rows only have the free-text `availability`, which is generated from the dates for new rows), `isTaken`, `photos String[]` (`imageUrl` = the cover), `ownerId` (nullable; null means sample).
 - `User`: email, passwordHash, name, `vtEmail` (unique), `vtVerifiedAt`.
 - `Inquiry`: listing (cascade delete), name, email, message, `readAt`.
+- `SavedListing` (user + listing, composite key), `SearchAlert` (q, maxPrice, bedrooms, term, verified), and `Report` (reason, details, optional email, resolvedAt). `Listing.removedAt` marks a moderator takedown.
 - `EmailToken`: one-time links. Only a SHA-256 hash is stored, with purpose `verify_vt` or `reset_password`. Cascades with the user.
 
 `amenities` is still a JSON string (a SQLite carryover) and is parsed in `app/_lib/listings.ts`.
@@ -49,6 +53,7 @@ Current data: the 10 Blacksburg sample listings (no owner), also stored in `pris
 | `AUTH_SECRET` | everything (the app 500s without it) | set |
 | `RESEND_API_KEY`, `EMAIL_FROM` | host alerts, VT verification, password reset | **not set yet**. Requires a custom domain verified in Resend (a `vercel.app` address can't be verified). Without them: production skips email; dev prints emails, including links, to the server console. |
 | `BLOB_READ_WRITE_TOKEN` | photo uploads | **not set yet**. Create a Blob store in Vercel → Storage and connect it to the project. |
+| `ADMIN_EMAILS` | moderators (`/admin`, report emails) | **not set yet**. Add the owner's login email. |
 | `NEXT_PUBLIC_SITE_URL` | links in emails | optional; defaults to the vercel.app URL |
 
 Email links in production always use `SITE_URL`, never the request Host header, to prevent reset-link poisoning (`app/_lib/origin.ts`).
@@ -71,8 +76,6 @@ Email links in production always use `SITE_URL`, never the request Host header, 
 
 ## 8. Ideas not built yet
 
-- Saved/favorite listings, and "alert me when a new place matches".
 - Map view (deliberately skipped so far).
 - Messaging threads in-app (today the reply goes over email).
-- Admin tools to remove reported listings (reports come in over email for now).
 - Moving `amenities` to a native Postgres array.

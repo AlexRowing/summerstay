@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BedDouble, Bath } from "lucide-react";
 import type { Listing } from "@/app/_lib/listings";
+import SaveButton from "@/app/_components/SaveButton";
 import VerifiedBadge from "@/app/_components/VerifiedBadge";
 import { formatPrice, isNew, shortDistance, termFor } from "@/app/_lib/format";
 
@@ -26,9 +27,12 @@ export type CardData = Pick<
 export default function ListingCard({
   listing,
   priority = false,
+  save,
 }: {
   listing: CardData;
   priority?: boolean;
+  // Pass to show the heart: whether it's saved and whether anyone is logged in.
+  save?: { saved: boolean; loggedIn: boolean };
 }) {
   const term = termFor(listing.availability, listing.startDate);
   const fresh = listing.createdAt ? isNew(listing.createdAt) : false;
@@ -93,12 +97,25 @@ export default function ListingCard({
 
   if (!listing.id) return <div className="group">{body}</div>;
 
+  // The heart sits beside the link, not inside it: a button nested in a
+  // link is invalid and confuses screen readers.
   return (
-    <Link
-      href={`/listings/${listing.id}`}
-      className="group block rounded-2xl outline-offset-4"
-    >
-      {body}
-    </Link>
+    <div className="group relative">
+      <Link
+        href={`/listings/${listing.id}`}
+        className="block rounded-2xl outline-offset-4"
+      >
+        {body}
+      </Link>
+      {save && (
+        <div className="absolute right-3 top-3">
+          <SaveButton
+            listingId={listing.id}
+            initialSaved={save.saved}
+            loggedIn={save.loggedIn}
+          />
+        </div>
+      )}
+    </div>
   );
 }

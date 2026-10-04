@@ -19,6 +19,7 @@ export type Listing = {
   startDate: Date | null;
   endDate: Date | null;
   isTaken: boolean;
+  removedAt: Date | null;
   description: string;
   amenities: string[];
   imageUrl: string;
@@ -50,6 +51,7 @@ function toListing(row: Row): Listing {
     startDate: row.startDate,
     endDate: row.endDate,
     isTaken: row.isTaken,
+    removedAt: row.removedAt,
     description: row.description,
     amenities: JSON.parse(row.amenities) as string[],
     imageUrl: row.imageUrl,
@@ -68,6 +70,7 @@ function liveWhere(): Prisma.ListingWhereInput {
   today.setUTCHours(0, 0, 0, 0);
   return {
     isTaken: false,
+    removedAt: null,
     OR: [{ endDate: null }, { endDate: { gte: today } }],
   };
 }
@@ -88,7 +91,7 @@ export const SORTS = {
 export type Sort = keyof typeof SORTS;
 
 export function isSort(value: string | undefined): value is Sort {
-  return !!value && value in SORTS;
+  return !!value && Object.hasOwn(SORTS, value);
 }
 
 // Optional filters for the browse page, all combined with AND.
@@ -303,4 +306,28 @@ export async function markInboxRead(ownerId: string): Promise<void> {
     where: { readAt: null, listing: { ownerId } },
     data: { readAt: new Date() },
   });
+}
+
+// Ids of the listings this user has saved, for filling in the hearts.
+export async function getSavedIds(
+  userId: string | undefined,
+): Promise<Set<string>> {
+  if (!userId) return new Set();
+  const rows = await prisma.savedListing.findMany({
+    where: { userId },
+    select: { listingId: true },
+  });
+  return new Set(rows.map((r) => r.listingId));
+}
+
+// Everything a user saved, most recently saved first. Includes places that
+// have since been taken, so the page can say so instead of silently dropping
+// them; moderator-removed listings are left out.
+export async function getSavedListings(userId: string): Promise<Listing[]> {
+  const rows = await prisma.savedListing.findMany({
+    where: { userId, listing: { removedAt: null } },
+    orderBy: { createdAt: "desc" },
+    include: { listing: { include: withOwner } },
+  });
+  return rows.map((r) => toListing(r.listing));
 }

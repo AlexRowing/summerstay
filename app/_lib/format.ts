@@ -151,3 +151,45 @@ export function safeImageUrl(raw: string): string {
 }
 
 export const MAX_PHOTOS = 8;
+
+// Why someone reported a listing (shown on the report form and to moderators).
+export const REPORT_REASONS = {
+  scam: "Looks like a scam",
+  inaccurate: "Details are wrong",
+  unavailable: "Already taken",
+  inappropriate: "Inappropriate content",
+  other: "Something else",
+} as const;
+export type ReportReason = keyof typeof REPORT_REASONS;
+
+export type AlertFilters = {
+  q: string | null;
+  maxPrice: number | null;
+  bedrooms: number | null;
+  term: string | null;
+  verified: boolean;
+};
+
+// "Summer · Foxridge · up to $800 · 2+ beds · verified hosts"
+export function describeAlert(a: AlertFilters): string {
+  const parts = [
+    a.term,
+    a.q && `“${a.q}”`,
+    a.maxPrice !== null && `up to ${formatPrice(a.maxPrice)}`,
+    a.bedrooms !== null && `${a.bedrooms}+ beds`,
+    a.verified && "verified hosts",
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "Any new place";
+}
+
+// The browse URL for an alert's filters.
+export function alertHref(a: AlertFilters): string {
+  const params = new URLSearchParams();
+  if (a.q) params.set("q", a.q);
+  if (a.maxPrice !== null) params.set("maxPrice", String(a.maxPrice));
+  if (a.bedrooms !== null) params.set("bedrooms", String(a.bedrooms));
+  if (a.term) params.set("term", a.term);
+  if (a.verified) params.set("verified", "1");
+  const qs = params.toString();
+  return qs ? `/listings?${qs}` : "/listings";
+}

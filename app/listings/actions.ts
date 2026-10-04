@@ -2,7 +2,8 @@
 
 import { after } from "next/server";
 import { prisma } from "@/app/_lib/db";
-import { sendInquiryEmail } from "@/app/_lib/email";
+import { sendInquiryEmail, sendReportEmail } from "@/app/_lib/email";
+import { REPORT_REASONS, type ReportReason } from "@/app/_lib/format";
 
 // What the contact form renders back: idle (fresh), sent (success), or error.
 export type InquiryState = {
@@ -50,6 +51,7 @@ export async function createInquiry(
     !listing ||
     !listing.ownerId ||
     listing.isTaken ||
+    listing.removedAt !== null ||
     (listing.endDate !== null && listing.endDate < today)
   ) {
     return { status: "error", error: "This listing is no longer available." };
@@ -87,5 +89,57 @@ export async function createInquiry(
     );
   }
 
+  return { status: "sent" };
+}
+
+export type ReportState = { status: "idle" | "sent" | "error"; error?: string };
+
+// Flag a listing for a moderator. Anyone can report; no account needed.
+export async function reportListing(
+  _prev: ReportState,
+  formData: FormData,
+): Promise<ReportState> {
+  if (String(formData.get("website") ?? "") !== "") return { status: "sent" };
+
+  const listingId = String(formData.get("listingId") ?? "");
+  const reason = String(formData.get("reason") ?? "") as ReportReason;
+  const details = String(formData.get("details") ?? "")
+    .trim()
+    .slice(0, 1000);
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .slice(0, 200);
+
+  if (!Object.hasOwn(REPORT_REASONS, reason)) {
+    return { status: "error", error: "Pick a reason." };
+  }
+
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    select: { id: true, title: true },
+  });
+  if (!listing) return { status: "error", error: "That listing is gone." };
+
+  // A cap so one listing can't be used to flood the moderation queue.
+  const open = await prisma.report.count({
+    where: { listingId, resolvedAt: null },
+  });
+  if (open < 20) {
+    await prisma.report.create({
+      data: {
+        listingId,
+        reason,
+        details: details || null,
+        email: email || null,
+      },
+    });
+    after(() =>
+      sendReportEmail({
+        listing,
+        reason: REPORT_REASONS[reason],
+        details,
+      }),
+    );
+  }
   return { status: "sent" };
 }

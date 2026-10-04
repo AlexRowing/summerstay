@@ -5,6 +5,7 @@ import Logo from "@/app/_components/Logo";
 import NavLink from "@/app/_components/NavLink";
 import UserMenu from "@/app/_components/UserMenu";
 import { button, size } from "@/app/_components/ui";
+import { isAdminEmail } from "@/app/_lib/admin";
 import { countUnread } from "@/app/_lib/listings";
 
 export default async function Navbar() {
@@ -42,6 +43,7 @@ export default async function Navbar() {
                 name={session.user.name ?? null}
                 email={session.user.email ?? ""}
                 unread={unread}
+                isAdmin={isAdminEmail(session.user.email)}
               />
             </>
           ) : (

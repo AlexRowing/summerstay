@@ -86,16 +86,20 @@ export default async function MyListingsPage() {
                   <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
                     <span
                       className={`rounded-md px-1.5 py-0.5 text-xs font-bold ${
-                        listing.isTaken || hasEnded(listing)
+                        listing.removedAt ||
+                        listing.isTaken ||
+                        hasEnded(listing)
                           ? "bg-sunken text-ink-soft"
                           : "bg-success-soft text-success"
                       }`}
                     >
-                      {listing.isTaken
-                        ? "Taken"
-                        : hasEnded(listing)
-                          ? "Dates passed"
-                          : "Live"}
+                      {listing.removedAt
+                        ? "Removed by a moderator"
+                        : listing.isTaken
+                          ? "Taken"
+                          : hasEnded(listing)
+                            ? "Dates passed"
+                            : "Live"}
                     </span>
                     {count === 0 ? (
                       <span className="text-ink-faint">No messages yet</span>

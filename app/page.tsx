@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
+import { auth } from "@/auth";
 import ListingCard from "@/app/_components/ListingCard";
 import SearchBar from "@/app/_components/SearchBar";
 import { button, size } from "@/app/_components/ui";
@@ -9,6 +10,7 @@ import {
   countListings,
   getFeaturedListings,
   getNeighborhoods,
+  getSavedIds,
   type Listing,
 } from "@/app/_lib/listings";
 
@@ -84,10 +86,13 @@ function HeroCollage({ listings }: { listings: Listing[] }) {
 }
 
 export default async function Home() {
-  const [featured, neighborhoods, total] = await Promise.all([
+  const session = await auth();
+  const loggedIn = Boolean(session?.user?.id);
+  const [featured, neighborhoods, total, savedIds] = await Promise.all([
     getFeaturedListings(9),
     getNeighborhoods(),
     countListings(),
+    getSavedIds(session?.user?.id),
   ]);
   const collage = featured.slice(0, 3);
   const grid =
@@ -167,7 +172,11 @@ export default async function Home() {
         </div>
         <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {grid.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              save={{ saved: savedIds.has(listing.id), loggedIn }}
+            />
           ))}
         </div>
         <Link

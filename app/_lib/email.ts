@@ -45,7 +45,7 @@ function layout(
 }
 
 type Email = {
-  to: string;
+  to: string | string[];
   subject: string;
   text: string;
   html: string;
@@ -60,7 +60,7 @@ async function send(email: Email): Promise<boolean> {
   if (!apiKey || !sender) {
     if (process.env.NODE_ENV !== "production") {
       console.info(
-        `\n[email not configured: printing instead]\nTo: ${email.to}\nSubject: ${email.subject}\n\n${email.text}\n`,
+        `\n[email not configured: printing instead]\nTo: ${[email.to].flat().join(", ")}\nSubject: ${email.subject}\n\n${email.text}\n`,
       );
     } else {
       console.warn("Email skipped: RESEND_API_KEY or EMAIL_FROM is not set.");
@@ -178,6 +178,85 @@ export async function sendPasswordResetEmail(
       ],
       { label: "Choose a new password", url },
       "The link works for 1 hour. If you didn't ask for this, ignore this email; your password won't change.",
+    ),
+  });
+}
+
+// Tell the moderators (ADMIN_EMAILS) that a listing was reported.
+export async function sendReportEmail(report: {
+  listing: { id: string; title: string };
+  reason: string;
+  details: string;
+}): Promise<void> {
+  const admins = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+  if (admins.length === 0) return;
+  const adminUrl = `${SITE_URL}/admin`;
+  const listingUrl = `${SITE_URL}/listings/${report.listing.id}`;
+  await send({
+    to: admins,
+    subject: `Report: ${report.reason} on "${report.listing.title}"`,
+    text: [
+      `"${report.listing.title}" was reported: ${report.reason}.`,
+      report.details ? `\n${report.details}\n` : "",
+      `Listing: ${listingUrl}`,
+      `Review it: ${adminUrl}`,
+    ].join("\n"),
+    html: layout(
+      [
+        para(
+          `<a href="${listingUrl}" style="color:#82203f;font-weight:600">${escapeHtml(report.listing.title)}</a> was reported: <strong>${escapeHtml(report.reason)}</strong>.`,
+        ),
+        report.details
+          ? `<div style="background:#f6f2f3;border-radius:12px;padding:16px 18px;font-size:15px;white-space:pre-line">${escapeHtml(report.details)}</div>`
+          : "",
+      ],
+      { label: "Review reports", url: adminUrl },
+    ),
+  });
+}
+
+// A new listing matched someone's saved search.
+export async function sendAlertEmail(alert: {
+  to: string;
+  name: string | null;
+  search: string;
+  listing: {
+    id: string;
+    title: string;
+    pricePerMonth: number;
+    neighborhood: string;
+    availability: string;
+  };
+}): Promise<void> {
+  const greeting = alert.name ? `Hi ${alert.name.split(" ")[0]},` : "Hi,";
+  const listingUrl = `${SITE_URL}/listings/${alert.listing.id}`;
+  const manageUrl = `${SITE_URL}/account/saved`;
+  const price = `$${alert.listing.pricePerMonth.toLocaleString("en-US")}/mo`;
+  await send({
+    to: alert.to,
+    subject: `New match: ${alert.listing.title}`,
+    text: [
+      greeting,
+      "",
+      `A new place matches your search (${alert.search}):`,
+      "",
+      `${alert.listing.title}`,
+      `${price} · ${alert.listing.neighborhood} · ${alert.listing.availability}`,
+      listingUrl,
+      "",
+      `Manage your alerts: ${manageUrl}`,
+    ].join("\n"),
+    html: layout(
+      [
+        para(escapeHtml(greeting)),
+        para(`A new place matches your search (${escapeHtml(alert.search)}):`),
+        `<div style="border:1px solid #e9e1e3;border-radius:12px;padding:16px 18px"><a href="${listingUrl}" style="color:#2a1a1f;font-weight:700;font-size:16px;text-decoration:none">${escapeHtml(alert.listing.title)}</a><div style="color:#6b5a5f;font-size:14px;margin-top:4px">${escapeHtml(price)} · ${escapeHtml(alert.listing.neighborhood)} · ${escapeHtml(alert.listing.availability)}</div></div>`,
+      ],
+      { label: "See the place", url: listingUrl },
+      `You're getting this because you saved a search on SummerStay. <a href="${manageUrl}" style="color:#6b5a5f">Manage or turn off alerts</a>.`,
     ),
   });
 }

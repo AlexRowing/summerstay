@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { notifySearchAlerts } from "@/app/_lib/alerts";
 import { prisma } from "@/app/_lib/db";
 import { after } from "next/server";
 import { del } from "@vercel/blob";
@@ -160,6 +161,9 @@ export async function createListing(
   const listing = await prisma.listing.create({
     data: { ...parsed.data, ownerId: session.user.id },
   });
+
+  // Let people with a matching saved search know, without slowing the post.
+  after(() => notifySearchAlerts(listing.id));
 
   revalidatePath("/");
   revalidatePath("/listings");

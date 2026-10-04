@@ -14,7 +14,10 @@ import {
 import { auth } from "@/auth";
 import ContactForm from "@/app/_components/ContactForm";
 import PhotoGallery from "@/app/_components/PhotoGallery";
+import ReportListing from "@/app/_components/ReportListing";
+import SaveButton from "@/app/_components/SaveButton";
 import VerifiedBadge from "@/app/_components/VerifiedBadge";
+import { isAdminEmail } from "@/app/_lib/admin";
 import DeleteListingButton from "@/app/_components/DeleteListingButton";
 import { button, size } from "@/app/_components/ui";
 import { formatPrice, shortDistance, termFor } from "@/app/_lib/format";
@@ -22,6 +25,7 @@ import { setTaken } from "@/app/host/actions";
 import {
   getListingById,
   getListingWithHost,
+  getSavedIds,
   hasEnded,
 } from "@/app/_lib/listings";
 
@@ -59,9 +63,15 @@ export default async function ListingDetailPage({
 
   const session = await auth();
   const isOwner = !!session?.user && session.user.id === listing.ownerId;
+  const admin = isAdminEmail(session?.user?.email);
+  // Moderator-removed listings vanish for everyone but the owner and admins.
+  if (listing.removedAt && !isOwner && !admin) notFound();
+
   const term = termFor(listing.availability, listing.startDate);
   const ended = hasEnded(listing);
-  const unavailable = listing.isTaken || ended;
+  const removed = listing.removedAt !== null;
+  const unavailable = listing.isTaken || ended || removed;
+  const savedIds = await getSavedIds(session?.user?.id);
 
   const facts = [
     {
@@ -92,14 +102,26 @@ export default async function ListingDetailPage({
         All places
       </Link>
 
-      <div className="mt-3 flex flex-col gap-1">
-        <h1 className="text-[1.75rem] font-bold leading-tight tracking-[-0.025em] sm:text-[2.25rem]">
-          {listing.title}
-        </h1>
-        <p className="text-ink-soft">
-          {listing.neighborhood}, {listing.city}
-          {term && <> · {term} sublease</>}
-        </p>
+      <div className="mt-3 flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-[1.75rem] font-bold leading-tight tracking-[-0.025em] sm:text-[2.25rem]">
+            {listing.title}
+          </h1>
+          <p className="text-ink-soft">
+            {listing.neighborhood}, {listing.city}
+            {term && <> · {term} sublease</>}
+          </p>
+        </div>
+        {!isOwner && (
+          <div className="shrink-0 pt-1">
+            <SaveButton
+              listingId={listing.id}
+              initialSaved={savedIds.has(listing.id)}
+              loggedIn={Boolean(session?.user)}
+              variant="button"
+            />
+          </div>
+        )}
       </div>
 
       {unavailable && (
@@ -113,13 +135,30 @@ export default async function ListingDetailPage({
           />
           <p className="text-[15px]">
             <span className="font-semibold">
-              {listing.isTaken
-                ? "This place has been taken."
-                : "These dates have passed."}
+              {removed
+                ? "A moderator took this listing down."
+                : listing.isTaken
+                  ? "This place has been taken."
+                  : "These dates have passed."}
             </span>{" "}
             <span className="text-ink-soft">
-              It&apos;s no longer in search.{" "}
-              {!isOwner && (
+              {removed ? (
+                <>
+                  Only you{admin && !isOwner ? " (as a moderator)" : ""} can see
+                  it.{" "}
+                  {isOwner && (
+                    <Link
+                      href="/contact"
+                      className="font-semibold text-brand-ink underline-offset-4 hover:underline"
+                    >
+                      Think it&apos;s a mistake? Contact us.
+                    </Link>
+                  )}
+                </>
+              ) : (
+                <>It&apos;s no longer in search. </>
+              )}
+              {!isOwner && !removed && (
                 <Link
                   href={`/listings?q=${encodeURIComponent(listing.neighborhood)}`}
                   className="font-semibold text-brand-ink underline-offset-4 hover:underline"
@@ -219,6 +258,11 @@ export default async function ListingDetailPage({
                 ))}
               </ul>
             </div>
+            {!isOwner && (
+              <div className="mt-6">
+                <ReportListing listingId={listing.id} />
+              </div>
+            )}
           </section>
         </div>
 
@@ -242,11 +286,13 @@ export default async function ListingDetailPage({
               <div className="mt-6 space-y-3 border-t border-line pt-6">
                 <p className="text-[15px] text-ink-soft">
                   This is your listing.{" "}
-                  {listing.isTaken
-                    ? "It's marked as taken and hidden from search."
-                    : ended
-                      ? "Its dates have passed, so it's hidden from search."
-                      : "It's live in search."}
+                  {removed
+                    ? "A moderator removed it, so nobody else can see it."
+                    : listing.isTaken
+                      ? "It's marked as taken and hidden from search."
+                      : ended
+                        ? "Its dates have passed, so it's hidden from search."
+                        : "It's live in search."}
                 </p>
                 <form action={setTaken}>
                   <input type="hidden" name="id" value={listing.id} />
