@@ -138,8 +138,16 @@ export function timeAgo(date: Date, now = new Date()): string {
 export const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=60";
 
-export function safeImageUrl(raw: string): string {
-  return raw.startsWith("https://images.unsplash.com/")
-    ? raw
-    : PLACEHOLDER_IMAGE;
+// Photo URLs next/image is allowed to load (see next.config.ts).
+export function isAllowedPhotoUrl(raw: string): boolean {
+  return (
+    raw.startsWith("https://images.unsplash.com/") ||
+    /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\//.test(raw)
+  );
 }
+
+export function safeImageUrl(raw: string): string {
+  return isAllowedPhotoUrl(raw) ? raw : PLACEHOLDER_IMAGE;
+}
+
+export const MAX_PHOTOS = 8;

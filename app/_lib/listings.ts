@@ -22,6 +22,8 @@ export type Listing = {
   description: string;
   amenities: string[];
   imageUrl: string;
+  // All photos in display order; older listings get their single imageUrl.
+  photos: string[];
   ownerId: string | null;
   createdAt: Date;
 };
@@ -45,6 +47,7 @@ function toListing(row: ListingRow): Listing {
     description: row.description,
     amenities: JSON.parse(row.amenities) as string[],
     imageUrl: row.imageUrl,
+    photos: row.photos.length > 0 ? row.photos : [row.imageUrl],
     ownerId: row.ownerId,
     createdAt: row.createdAt,
   };

@@ -1,6 +1,8 @@
 "use server";
 
+import { after } from "next/server";
 import { prisma } from "@/app/_lib/db";
+import { sendInquiryEmail } from "@/app/_lib/email";
 
 // What the contact form renders back: idle (fresh), sent (success), or error.
 export type InquiryState = {
@@ -14,6 +16,10 @@ export async function createInquiry(
   _prev: InquiryState,
   formData: FormData,
 ): Promise<InquiryState> {
+  // Honeypot: a field real people never see. Bots that fill every input get
+  // a fake success and nothing is saved.
+  if (String(formData.get("website") ?? "") !== "") return { status: "sent" };
+
   const listingId = String(formData.get("listingId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
@@ -34,7 +40,10 @@ export async function createInquiry(
   }
 
   // Confirm the listing still exists before recording interest in it.
-  const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    include: { owner: { select: { email: true, name: true } } },
+  });
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   if (
@@ -46,6 +55,37 @@ export async function createInquiry(
     return { status: "error", error: "This listing is no longer available." };
   }
 
+  // Light spam guard: one message per sender per listing every 10 minutes,
+  // so a double-tap or a script can't flood a host's inbox and email.
+  const recent = await prisma.inquiry.findFirst({
+    where: {
+      listingId,
+      email: { equals: email, mode: "insensitive" },
+      createdAt: { gte: new Date(Date.now() - 10 * 60 * 1000) },
+    },
+  });
+  if (recent) {
+    return {
+      status: "error",
+      error: "You just messaged this host. Give them a little time to reply.",
+    };
+  }
+
   await prisma.inquiry.create({ data: { listingId, name, email, message } });
+
+  // Email the host once the response is on its way, so a slow mail provider
+  // never holds up the student's confirmation.
+  const owner = listing.owner;
+  if (owner) {
+    after(() =>
+      sendInquiryEmail({
+        to: owner.email,
+        hostName: owner.name,
+        listing: { id: listing.id, title: listing.title },
+        from: { name, email, message },
+      }),
+    );
+  }
+
   return { status: "sent" };
 }

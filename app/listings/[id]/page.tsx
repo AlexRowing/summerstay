@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import { auth } from "@/auth";
 import ContactForm from "@/app/_components/ContactForm";
+import PhotoGallery from "@/app/_components/PhotoGallery";
 import DeleteListingButton from "@/app/_components/DeleteListingButton";
 import { button, size } from "@/app/_components/ui";
 import { formatPrice, shortDistance, termFor } from "@/app/_lib/format";
@@ -131,16 +131,7 @@ export default async function ListingDetailPage({
         </div>
       )}
 
-      <div className="relative mt-6 aspect-[4/3] overflow-hidden rounded-2xl bg-sunken sm:aspect-[2/1]">
-        <Image
-          src={listing.imageUrl}
-          alt={listing.title}
-          fill
-          sizes="(max-width: 1152px) 100vw, 1104px"
-          className="object-cover"
-          priority
-        />
-      </div>
+      <PhotoGallery photos={listing.photos} title={listing.title} />
 
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px] lg:gap-16">
         <div className="min-w-0">

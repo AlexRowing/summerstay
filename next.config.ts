@@ -1,12 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Allow next/image to load our placeholder photos from Unsplash.
+  // Hosts next/image may load photos from: Unsplash (placeholders and older
+  // listings) and our Vercel Blob store (uploads).
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "images.unsplash.com",
+      },
+      // Photos hosts upload through Vercel Blob.
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
       },
     ],
   },

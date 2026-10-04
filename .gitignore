@@ -50,3 +50,6 @@ settings.local.json
 
 # impeccable skill working files
 .impeccable/
+
+# Allow the documented example env file
+!.env.example

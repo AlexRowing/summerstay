@@ -4,7 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/app/_lib/db";
-import { formatRange, fromDateInput, safeImageUrl } from "@/app/_lib/format";
+import { after } from "next/server";
+import { del } from "@vercel/blob";
+import {
+  MAX_PHOTOS,
+  PLACEHOLDER_IMAGE,
+  formatRange,
+  fromDateInput,
+  isAllowedPhotoUrl,
+} from "@/app/_lib/format";
 
 // What the listing form renders back: an error message, or nothing on success
 // (a successful submit redirects instead of returning).
@@ -25,7 +33,38 @@ type ListingFields = {
   description: string;
   amenities: string;
   imageUrl: string;
+  photos: string[];
 };
+
+// Uploaded photos live in Vercel Blob; Unsplash links (older listings) don't.
+const isBlobUrl = (url: string) => url.includes(".blob.vercel-storage.com/");
+
+// Delete photos from the Blob store once they're no longer used. Runs after
+// the response so the host isn't kept waiting; failures only leave orphans.
+function deletePhotosLater(urls: string[]) {
+  const blobs = urls.filter(isBlobUrl);
+  if (blobs.length === 0) return;
+  after(async () => {
+    try {
+      await del(blobs);
+    } catch (error) {
+      console.error("Couldn't delete old photos:", error);
+    }
+  });
+}
+
+// The photo list the form sent, keeping only URLs we can display.
+function readPhotos(raw: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(raw || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((u): u is string => typeof u === "string" && isAllowedPhotoUrl(u))
+      .slice(0, MAX_PHOTOS);
+  } catch {
+    return [];
+  }
+}
 
 // Read + validate the form fields once, so create and update stay in sync.
 // Returns either an error message or the clean data to write.
@@ -78,6 +117,8 @@ function readListingFields(
     return { error: "Those dates have already passed." };
   }
 
+  const photos = readPhotos(text("photos"));
+
   const amenities = text("amenities")
     .split(",")
     .map((item) => item.trim())
@@ -97,7 +138,8 @@ function readListingFields(
       endDate,
       description,
       amenities: JSON.stringify(amenities),
-      imageUrl: safeImageUrl(text("imageUrl")),
+      imageUrl: photos[0] ?? PLACEHOLDER_IMAGE,
+      photos,
     },
   };
 }
@@ -145,6 +187,9 @@ export async function updateListing(
   if ("error" in parsed) return { error: parsed.error };
 
   await prisma.listing.update({ where: { id }, data: parsed.data });
+  deletePhotosLater(
+    existing.photos.filter((url) => !parsed.data.photos.includes(url)),
+  );
 
   revalidatePath("/");
   revalidatePath("/listings");
@@ -165,6 +210,7 @@ export async function deleteListing(formData: FormData): Promise<void> {
   }
 
   await prisma.listing.delete({ where: { id } });
+  deletePhotosLater(existing.photos);
 
   revalidatePath("/");
   revalidatePath("/listings");

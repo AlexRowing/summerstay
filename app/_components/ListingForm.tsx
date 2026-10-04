@@ -10,11 +10,13 @@ import {
   formatRange,
   fromDateInput,
   nextTermDates,
+  PLACEHOLDER_IMAGE,
   safeImageUrl,
   toDateInput,
   type Term,
 } from "@/app/_lib/format";
 import ListingCard, { type CardData } from "@/app/_components/ListingCard";
+import PhotoUploader from "@/app/_components/PhotoUploader";
 import {
   button,
   field,
@@ -56,7 +58,8 @@ function draftDates(start: string, end: string) {
   };
 }
 
-function readDraft(form: HTMLFormElement): CardData {
+// Everything the preview card shows except the photo, read from the form.
+function readDraft(form: HTMLFormElement): Omit<CardData, "imageUrl"> {
   const data = new FormData(form);
   const text = (name: string) => String(data.get(name) ?? "").trim();
   const num = (name: string) => {
@@ -71,7 +74,6 @@ function readDraft(form: HTMLFormElement): CardData {
     bedrooms: num("bedrooms"),
     bathrooms: num("bathrooms"),
     pricePerMonth: num("pricePerMonth"),
-    imageUrl: safeImageUrl(text("imageUrl")),
   };
 }
 
@@ -202,7 +204,10 @@ export default function ListingForm({
       <form
         action={formAction}
         onSubmit={handleSubmit}
-        onChange={(e) => setDraft(readDraft(e.currentTarget))}
+        onChange={(e) => {
+          const form = e.currentTarget;
+          setDraft((d) => ({ ...d, ...readDraft(form) }));
+        }}
         noValidate
         className="space-y-10"
       >
@@ -467,31 +472,20 @@ export default function ListingForm({
         </Section>
 
         <Section
-          title="Photo"
-          description="Listings with a real photo get far more interest."
+          title="Photos"
+          description="Listings with real photos get far more interest. Show the bedroom, the common space, and the outside."
         >
-          <div>
-            <label htmlFor="imageUrl" className={label}>
-              Photo URL
-            </label>
-            <input
-              {...bind("imageUrl", "Photo URL")}
-              type="url"
-              defaultValue={
-                listing?.imageUrl &&
-                listing.imageUrl === safeImageUrl(listing.imageUrl)
-                  ? listing.imageUrl
-                  : ""
-              }
-              placeholder="https://images.unsplash.com/..."
-              className={field}
-            />
-            <p className={hint}>
-              Optional for now. Paste an Unsplash image link, or leave it blank
-              and we&apos;ll use a placeholder.
-            </p>
-            {err("imageUrl")}
-          </div>
+          <PhotoUploader
+            initial={
+              listing?.photos.filter((p) => p !== PLACEHOLDER_IMAGE) ?? []
+            }
+            onChange={(photos) =>
+              setDraft((d) => ({
+                ...d,
+                imageUrl: photos[0] ?? PLACEHOLDER_IMAGE,
+              }))
+            }
+          />
         </Section>
 
         <div className="border-t border-line pt-8">

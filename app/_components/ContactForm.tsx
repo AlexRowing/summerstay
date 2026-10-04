@@ -66,6 +66,19 @@ export default function ContactForm({
       className="mt-4 space-y-4"
     >
       <input type="hidden" name="listingId" value={listingId} />
+      <div
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-px w-px overflow-hidden"
+      >
+        <label htmlFor="website">Leave this empty</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
       <div>
         <label htmlFor="name" className={label}>
           Your name

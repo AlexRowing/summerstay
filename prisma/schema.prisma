@@ -34,7 +34,11 @@ model Listing {
   // through the SQLite->Postgres migration to keep the schema identical; a
   // later change can switch this to a native Postgres text[] array.
   amenities        String
+  // The cover photo (always photos[0] when photos exist). Kept as its own
+  // column so cards and older rows keep working.
   imageUrl         String
+  // Every uploaded photo, in display order. Empty for older listings.
+  photos           String[] @default([])
   createdAt        DateTime @default(now())
   inquiries        Inquiry[]
   // Who posted this listing. Nullable because the seeded starter listings have

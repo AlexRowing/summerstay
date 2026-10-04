@@ -75,6 +75,8 @@ DATABASE_URL="postgresql://..."   # your Postgres connection string
 AUTH_SECRET="..."                 # any strong random string
 ```
 
+Optional: `RESEND_API_KEY` + `EMAIL_FROM` turn on email alerts to hosts, and `BLOB_READ_WRITE_TOKEN` turns on photo uploads. See `.env.example` for every variable.
+
 Generate a secret with:
 
 ```bash
