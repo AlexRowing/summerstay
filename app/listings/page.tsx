@@ -1,127 +1,178 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SearchX, X } from "lucide-react";
 import ListingCard from "@/app/_components/ListingCard";
-import { getListings } from "@/app/_lib/listings";
+import SearchBar from "@/app/_components/SearchBar";
+import { button, size } from "@/app/_components/ui";
+import { SORTS, getListings, isSort, type Sort } from "@/app/_lib/listings";
 
-export const metadata: Metadata = { title: "Browse listings" };
+export const metadata: Metadata = { title: "Find a place" };
 
-const fieldClass =
-  "rounded-lg border border-line bg-card px-3 py-2 text-sm outline-none focus:border-ink-soft";
+type Params = {
+  q?: string;
+  city?: string; // older links used ?city=
+  maxPrice?: string;
+  bedrooms?: string;
+  sort?: string;
+};
+
+function toNumber(raw: string | undefined): number | undefined {
+  if (!raw) return undefined;
+  const n = Number(raw);
+  // Ignore junk like ?maxPrice=abc rather than passing NaN to the query.
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
 
 export default async function ListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    city?: string;
-    maxPrice?: string;
-    bedrooms?: string;
-  }>;
+  searchParams: Promise<Params>;
 }) {
   const params = await searchParams;
-  const city = params.city?.trim() || undefined;
-  const maxPriceNum = params.maxPrice ? Number(params.maxPrice) : undefined;
-  const bedroomsNum = params.bedrooms ? Number(params.bedrooms) : undefined;
-  // Ignore junk like ?maxPrice=abc rather than passing NaN to the query.
-  const maxPrice = Number.isFinite(maxPriceNum) ? maxPriceNum : undefined;
-  const bedrooms = Number.isFinite(bedroomsNum) ? bedroomsNum : undefined;
+  const q = (params.q ?? params.city)?.trim() || undefined;
+  const maxPrice = toNumber(params.maxPrice);
+  const bedrooms = toNumber(params.bedrooms);
+  const sort: Sort = isSort(params.sort) ? params.sort : "new";
 
-  const listings = await getListings({ city, maxPrice, bedrooms });
-  const isFiltered = Boolean(city || maxPrice || bedrooms);
+  const listings = await getListings({ q, maxPrice, bedrooms, sort });
+  const isFiltered = Boolean(
+    q || maxPrice !== undefined || bedrooms !== undefined,
+  );
+
+  // Build a /listings URL from the current params with some keys changed.
+  const hrefWith = (
+    changes: Partial<Record<keyof Params, string | undefined>>,
+  ) => {
+    const next = new URLSearchParams();
+    const merged = {
+      q,
+      maxPrice: maxPrice?.toString(),
+      bedrooms: bedrooms?.toString(),
+      sort: sort === "new" ? undefined : sort,
+      ...changes,
+    };
+    for (const [key, value] of Object.entries(merged)) {
+      if (value) next.set(key, value);
+    }
+    const qs = next.toString();
+    return qs ? `/listings?${qs}` : "/listings";
+  };
+
+  const chips = [
+    q && { label: `“${q}”`, href: hrefWith({ q: undefined }) },
+    maxPrice !== undefined && {
+      label: `Up to $${maxPrice.toLocaleString("en-US")}`,
+      href: hrefWith({ maxPrice: undefined }),
+    },
+    bedrooms !== undefined && {
+      label: `${bedrooms}+ beds`,
+      href: hrefWith({ bedrooms: undefined }),
+    },
+  ].filter(Boolean) as { label: string; href: string }[];
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Browse listings</h1>
-      <p className="mt-2 text-ink-soft">
-        {listings.length === 0
-          ? isFiltered
-            ? "No sublets match your search"
-            : "No sublets posted yet"
-          : `${listings.length} summer ${
-              listings.length === 1 ? "sublet" : "sublets"
-            }${isFiltered ? " match your search" : " near campus"}`}
+    <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
+      <h1 className="text-3xl font-bold tracking-[-0.025em] sm:text-[2.25rem]">
+        Find a place
+      </h1>
+      <p className="mt-1.5 text-ink-soft">
+        Subleases from students near campus, for any term.
       </p>
 
-      {/* Plain GET form: submitting puts the fields in the URL
-          (?city=…&maxPrice=…&bedrooms=…), which this page reads. No JS. */}
-      <form
-        method="get"
-        className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center"
-      >
-        <input
-          name="city"
-          type="text"
-          defaultValue={city ?? ""}
-          placeholder="City (e.g. Austin)"
-          className={`${fieldClass} sm:flex-1`}
-          aria-label="City"
+      <div className="mt-6">
+        <SearchBar
+          q={q}
+          maxPrice={maxPrice}
+          bedrooms={bedrooms}
+          sort={sort === "new" ? undefined : sort}
         />
-        <input
-          name="maxPrice"
-          type="number"
-          min="0"
-          defaultValue={maxPrice ?? ""}
-          placeholder="Max $/month"
-          className={fieldClass}
-          aria-label="Maximum price per month"
-        />
-        <select
-          name="bedrooms"
-          defaultValue={bedrooms ?? ""}
-          className={fieldClass}
-          aria-label="Minimum bedrooms"
-        >
-          <option value="">Any beds</option>
-          <option value="1">1+ beds</option>
-          <option value="2">2+ beds</option>
-          <option value="3">3+ beds</option>
-          <option value="4">4+ beds</option>
-        </select>
-        <button
-          type="submit"
-          className="rounded-full bg-brand px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-dark"
-        >
-          Search
-        </button>
-        {isFiltered && (
-          <Link
-            href="/listings"
-            className="text-center text-sm font-medium text-ink-soft transition-colors hover:text-ink"
-          >
-            Clear
-          </Link>
-        )}
-      </form>
+      </div>
 
-      {listings.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-line bg-card p-12 text-center">
-          <p className="font-medium">
-            {isFiltered ? "No matches" : "Nothing here yet"}
+      {/* Toolbar: result count + active filters on the left, sort on the
+          right. Sort options are plain links so they work without JS. */}
+      <div className="mt-6 flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="tabular mr-1 font-semibold" aria-live="polite">
+            {listings.length} {listings.length === 1 ? "place" : "places"}
           </p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
-            {isFiltered
-              ? "Try widening your search — a higher price or fewer bedrooms."
-              : "No one has posted a summer sublet yet. Be the first to list your place."}
-          </p>
-          {isFiltered ? (
+          {chips.map((chip) => (
             <Link
-              href="/listings"
-              className="mt-6 inline-block rounded-full border border-line bg-card px-6 py-3 font-medium transition-colors hover:border-ink-soft"
+              key={chip.label}
+              href={chip.href}
+              aria-label={`Remove filter ${chip.label}`}
+              className="flex h-8 items-center gap-1 rounded-lg bg-sunken pl-2.5 pr-2 text-sm font-medium text-ink transition-colors hover:bg-line"
             >
-              Clear filters
+              {chip.label}
+              <X className="size-3.5 text-ink-soft" aria-hidden="true" />
             </Link>
-          ) : (
+          ))}
+          {chips.length > 1 && (
             <Link
-              href="/host"
-              className="mt-6 inline-block rounded-full bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark"
+              href={hrefWith({
+                q: undefined,
+                maxPrice: undefined,
+                bedrooms: undefined,
+              })}
+              className="px-1 text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
             >
-              List your place
+              Clear all
             </Link>
           )}
         </div>
+
+        <nav aria-label="Sort" className="flex items-center gap-1 text-sm">
+          <span className="mr-1 text-ink-soft">Sort</span>
+          {(Object.keys(SORTS) as Sort[]).map((key) => (
+            <Link
+              key={key}
+              href={hrefWith({ sort: key === "new" ? undefined : key })}
+              aria-current={sort === key ? "true" : undefined}
+              className={`rounded-lg px-2.5 py-1.5 font-medium transition-colors ${
+                sort === key
+                  ? "bg-ink text-surface"
+                  : "text-ink-soft hover:bg-sunken hover:text-ink"
+              }`}
+            >
+              {SORTS[key]}
+            </Link>
+          ))}
+        </nav>
+      </div>
+
+      {listings.length === 0 ? (
+        <div className="mx-auto mt-16 max-w-md text-center">
+          <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-sunken text-ink-soft">
+            <SearchX className="size-6" aria-hidden="true" />
+          </span>
+          <h2 className="mt-4 text-xl font-bold">
+            {isFiltered
+              ? "No places match that search"
+              : "No places posted yet"}
+          </h2>
+          <p className="mt-2 text-ink-soft">
+            {isFiltered
+              ? "Try a nearby neighborhood, a higher max rent, or fewer bedrooms."
+              : "Be the first to post a sublease. It takes a few minutes."}
+          </p>
+          <div className="mt-6 flex justify-center gap-2">
+            {isFiltered ? (
+              <Link
+                href="/listings"
+                className={`${button.secondary} ${size.md}`}
+              >
+                Clear search
+              </Link>
+            ) : (
+              <Link href="/host" className={`${button.primary} ${size.md}`}>
+                List your place
+              </Link>
+            )}
+          </div>
+        </div>
       ) : (
-        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+        <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          {listings.map((listing, i) => (
+            <ListingCard key={listing.id} listing={listing} priority={i < 3} />
           ))}
         </div>
       )}

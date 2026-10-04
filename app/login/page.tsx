@@ -1,16 +1,27 @@
 import type { Metadata } from "next";
+import AuthShell from "@/app/_components/AuthShell";
 import LoginForm from "@/app/_components/LoginForm";
 
 export const metadata: Metadata = { title: "Log in" };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  const posting = next === "/host";
+
   return (
-    <div className="mx-auto flex max-w-sm flex-col justify-center px-6 py-16">
-      <div className="rounded-2xl border border-line bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-bold tracking-tight">Log in</h1>
-        <p className="mt-1 text-sm text-ink-soft">Welcome back to SummerStay.</p>
-        <LoginForm />
-      </div>
-    </div>
+    <AuthShell
+      title="Welcome back"
+      subtitle={
+        posting
+          ? "Log in to post your place."
+          : "Log in to manage your listings."
+      }
+    >
+      <LoginForm next={next} />
+    </AuthShell>
   );
 }

@@ -9,6 +9,17 @@ import { signIn, signOut } from "@/auth";
 // success (a successful auth redirects instead of returning).
 export type AuthState = { error?: string };
 
+// Where to land after logging in. Only same-site paths are allowed, so a
+// crafted ?next= link can't bounce someone to another website.
+function safeNext(formData: FormData): string {
+  const next = String(formData.get("next") ?? "");
+  return next.startsWith("/") &&
+    !next.startsWith("//") &&
+    !next.startsWith("/\\")
+    ? next
+    : "/";
+}
+
 // Sign the current user out and return home. Used by the navbar user menu.
 export async function signOutAction() {
   await signOut({ redirectTo: "/" });
@@ -25,7 +36,7 @@ export async function authenticate(
     await signIn("credentials", {
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
-      redirectTo: "/",
+      redirectTo: safeNext(formData),
     });
     return {};
   } catch (error) {
@@ -65,7 +76,11 @@ export async function register(
   });
 
   try {
-    await signIn("credentials", { email, password, redirectTo: "/" });
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: safeNext(formData),
+    });
     return {};
   } catch (error) {
     if (error instanceof AuthError) {

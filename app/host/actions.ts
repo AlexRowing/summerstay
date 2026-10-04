@@ -4,18 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/app/_lib/db";
-
-// Used when the host leaves the photo field blank, or pastes a URL we can't
-// safely display (see note below).
-const DEFAULT_IMAGE =
-  "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=60";
-
-// next/image only loads photos from hosts allow-listed in next.config.ts
-// (currently just Unsplash). Accepting an arbitrary URL would crash the page
-// when it renders, so anything else falls back to the placeholder.
-function safeImageUrl(raw: string): string {
-  return raw.startsWith("https://images.unsplash.com") ? raw : DEFAULT_IMAGE;
-}
+import { safeImageUrl } from "@/app/_lib/format";
 
 // What the listing form renders back: an error message, or nothing on success
 // (a successful submit redirects instead of returning).

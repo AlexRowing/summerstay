@@ -4,14 +4,19 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { authenticate, type AuthState } from "@/app/_lib/auth-actions";
 import { collectFieldErrors } from "@/app/_lib/form-validation";
+import PasswordInput from "@/app/_components/PasswordInput";
+import {
+  button,
+  field,
+  fieldError,
+  label,
+  size,
+  textLink,
+} from "@/app/_components/ui";
 
 const initialState: AuthState = {};
-const inputClass =
-  "mt-1 w-full rounded-lg border border-line bg-card px-3 py-2 text-sm outline-none focus:border-ink-soft";
-const labelClass = "block text-sm font-medium";
-const errorClass = "mt-1 text-sm text-red-600 dark:text-red-400";
 
-export default function LoginForm() {
+export default function LoginForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState(
     authenticate,
     initialState,
@@ -29,16 +34,22 @@ export default function LoginForm() {
   function clearError(name: string) {
     setErrors((prev) => {
       if (!prev[name]) return prev;
-      const next = { ...prev };
-      delete next[name];
-      return next;
+      const copy = { ...prev };
+      delete copy[name];
+      return copy;
     });
   }
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} noValidate className="mt-8 space-y-4">
+    <form
+      action={formAction}
+      onSubmit={handleSubmit}
+      noValidate
+      className="mt-8 space-y-5"
+    >
+      {next && <input type="hidden" name="next" value={next} />}
       <div>
-        <label htmlFor="email" className={labelClass}>
+        <label htmlFor="email" className={label}>
           Email
         </label>
         <input
@@ -48,41 +59,50 @@ export default function LoginForm() {
           required
           data-label="Email"
           autoComplete="email"
-          placeholder="you@school.edu"
-          className={inputClass}
+          placeholder="you@vt.edu"
+          aria-invalid={errors.email ? true : undefined}
+          className={field}
           onInput={() => clearError("email")}
         />
-        {errors.email && <p className={errorClass}>{errors.email}</p>}
+        {errors.email && <p className={fieldError}>{errors.email}</p>}
       </div>
       <div>
-        <label htmlFor="password" className={labelClass}>
+        <label htmlFor="password" className={label}>
           Password
         </label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           required
           data-label="Password"
           autoComplete="current-password"
-          placeholder="Your password"
-          className={inputClass}
+          aria-invalid={errors.password ? true : undefined}
           onInput={() => clearError("password")}
         />
-        {errors.password && <p className={errorClass}>{errors.password}</p>}
+        {errors.password && <p className={fieldError}>{errors.password}</p>}
       </div>
-      {state.error && <p className={errorClass}>{state.error}</p>}
+      {state.error && (
+        <p
+          role="alert"
+          className="rounded-lg bg-danger-soft px-3.5 py-2.5 text-[15px] font-medium text-danger"
+        >
+          {state.error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-full bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark disabled:opacity-60"
+        className={`${button.primary} ${size.lg} w-full`}
       >
-        {pending ? "Logging in..." : "Log in"}
+        {pending ? "Logging in…" : "Log in"}
       </button>
-      <p className="text-center text-sm text-ink-soft">
-        No account?{" "}
-        <Link href="/signup" className="font-medium text-brand hover:underline">
-          Sign up
+      <p className="text-center text-[15px] text-ink-soft">
+        New here?{" "}
+        <Link
+          href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+          className={textLink}
+        >
+          Create an account
         </Link>
       </p>
     </form>

@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/app/_lib/db";
+import { signOutAction } from "@/app/_lib/auth-actions";
+import AccountNav from "@/app/account/AccountNav";
+import { button, size } from "@/app/_components/ui";
 
-export const metadata: Metadata = { title: "Account" };
+export const metadata: Metadata = { title: "Profile" };
 
 export default async function AccountPage() {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) redirect("/login");
+  if (!userId) redirect("/login?next=/account");
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
+    include: { _count: { select: { listings: true } } },
   });
   if (!user) redirect("/login");
 
@@ -20,33 +23,52 @@ export default async function AccountPage() {
     year: "numeric",
     month: "long",
   });
+  const displayName = user.name || user.email;
+
+  const rows = [
+    { label: "Name", value: user.name || "Not set" },
+    { label: "Email", value: user.email },
+    { label: "Member since", value: memberSince },
+    {
+      label: "Listings posted",
+      value: String(user._count.listings),
+    },
+  ];
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Account</h1>
-      <p className="mt-2 text-ink-soft">Your SummerStay profile.</p>
+    <div className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
+      <h1 className="text-3xl font-bold tracking-[-0.025em]">Your account</h1>
+      <AccountNav />
 
-      <dl className="mt-8 divide-y divide-line rounded-2xl border border-line bg-card">
-        <div className="flex items-center justify-between px-6 py-4">
-          <dt className="text-sm text-ink-soft">Name</dt>
-          <dd className="font-medium">{user.name || "Not set"}</dd>
+      <div className="mt-8 flex items-center gap-4">
+        <span className="flex size-16 items-center justify-center rounded-full bg-brand-soft text-2xl font-bold text-brand-ink">
+          {displayName.charAt(0).toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-lg font-bold">{displayName}</p>
+          <p className="text-[15px] text-ink-soft">
+            On SummerStay since {memberSince}
+          </p>
         </div>
-        <div className="flex items-center justify-between px-6 py-4">
-          <dt className="text-sm text-ink-soft">Email</dt>
-          <dd className="font-medium">{user.email}</dd>
-        </div>
-        <div className="flex items-center justify-between px-6 py-4">
-          <dt className="text-sm text-ink-soft">Member since</dt>
-          <dd className="font-medium">{memberSince}</dd>
-        </div>
+      </div>
+
+      <dl className="mt-8 divide-y divide-line border-y border-line">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="flex flex-col gap-0.5 py-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <dt className="text-[15px] text-ink-soft">{row.label}</dt>
+            <dd className="truncate font-medium">{row.value}</dd>
+          </div>
+        ))}
       </dl>
 
-      <Link
-        href="/account/listings"
-        className="mt-6 inline-block text-sm font-medium text-brand transition-colors hover:text-brand-dark"
-      >
-        View my listings →
-      </Link>
+      <form action={signOutAction} className="mt-8">
+        <button type="submit" className={`${button.secondary} ${size.md}`}>
+          Log out
+        </button>
+      </form>
     </div>
   );
 }

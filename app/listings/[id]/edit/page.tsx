@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { auth } from "@/auth";
 import ListingForm from "@/app/_components/ListingForm";
 import { updateListing } from "@/app/host/actions";
 import { getListingById } from "@/app/_lib/listings";
+
+export const metadata: Metadata = { title: "Edit listing" };
 
 export default async function EditListingPage({
   params,
@@ -23,9 +28,20 @@ export default async function EditListingPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Edit listing</h1>
-      <p className="mt-2 text-ink-soft">Update the details for your place.</p>
+    <div className="mx-auto max-w-6xl px-4 pb-20 pt-6 sm:px-6">
+      <Link
+        href={`/listings/${id}`}
+        className="-ml-1 inline-flex items-center gap-0.5 rounded-lg py-1 pr-2 text-[15px] font-medium text-ink-soft transition-colors hover:text-ink"
+      >
+        <ChevronLeft className="size-4" aria-hidden="true" />
+        Back to listing
+      </Link>
+      <h1 className="mt-3 text-3xl font-bold tracking-[-0.025em] sm:text-[2.25rem]">
+        Edit listing
+      </h1>
+      <p className="mt-1.5 text-ink-soft">
+        Changes go live as soon as you save.
+      </p>
       <ListingForm
         action={updateListing}
         listing={listing}

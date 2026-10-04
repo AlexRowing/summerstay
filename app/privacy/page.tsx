@@ -11,12 +11,13 @@ const LAST_UPDATED = "July 18, 2026";
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 pt-12 pb-20">
-      <p className="text-sm font-medium text-brand">Legal</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">Privacy Policy</h1>
+    <div className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6 sm:pt-12">
+      <h1 className="text-3xl font-bold tracking-[-0.025em] sm:text-[2.25rem]">
+        Privacy Policy
+      </h1>
       <p className="mt-2 text-sm text-ink-soft">Last updated {LAST_UPDATED}</p>
 
-      <div className="mt-8 space-y-10 leading-relaxed text-ink-soft">
+      <div className="mt-10 max-w-[68ch] space-y-10 text-[17px] leading-relaxed text-ink-soft">
         <p>
           SummerStay is a student-to-student marketplace for summer sublets near
           campus. This policy explains what we collect, why we collect it, and
@@ -25,7 +26,7 @@ export default function PrivacyPage() {
         </p>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
             Information we collect
           </h2>
           <p>We collect the following to operate SummerStay:</p>
@@ -39,8 +40,8 @@ export default function PrivacyPage() {
             </li>
             <li>
               <span className="font-medium text-ink">Listing content.</span>{" "}
-              When you post a sublet, we store the details you enter, such as the
-              title, description, location, dates, price, and amenities.
+              When you post a sublet, we store the details you enter, such as
+              the title, description, location, dates, price, and amenities.
             </li>
             <li>
               <span className="font-medium text-ink">Photos.</span> Images you
@@ -56,7 +57,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
             How we use your information
           </h2>
           <p>We use the information above to:</p>
@@ -73,7 +74,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
             How your information is shared
           </h2>
           <p>
@@ -95,15 +96,21 @@ export default function PrivacyPage() {
               on our behalf so the platform can function.
             </li>
             <li>
-              <span className="font-medium text-ink">When required by law.</span>{" "}
+              <span className="font-medium text-ink">
+                When required by law.
+              </span>{" "}
               We may disclose information if we are legally compelled to do so.
             </li>
           </ul>
-          <p className="font-medium text-ink">We do not sell your personal data.</p>
+          <p className="font-medium text-ink">
+            We do not sell your personal data.
+          </p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">Data storage</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
+            Data storage
+          </h2>
           <p>
             Listing and inquiry data is stored in a Neon Postgres database, and
             uploaded images are stored with UploadThing. We keep your
@@ -113,7 +120,9 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">Your choices</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
+            Your choices
+          </h2>
           <p>You stay in control of the content you add:</p>
           <ul className="ml-5 list-disc space-y-2">
             <li>
@@ -128,7 +137,9 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">Changes to this policy</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
+            Changes to this policy
+          </h2>
           <p>
             We may update this policy as SummerStay evolves. When we do, we will
             revise the &ldquo;last updated&rdquo; date above.
@@ -136,10 +147,15 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">Contact us</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
+            Contact us
+          </h2>
           <p>
             Questions about this policy? Reach us through our{" "}
-            <Link href="/contact" className="text-brand hover:underline">
+            <Link
+              href="/contact"
+              className="font-semibold text-brand-ink underline-offset-4 hover:underline"
+            >
               contact page
             </Link>
             .

@@ -8,61 +8,117 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
-  Design tokens — each one has a light value here and a dark value in
-  the .dark block below. Components never reference these hex codes
-  directly; they use classes like bg-card and text-ink, so the whole
-  site switches themes by swapping these variables.
+  Design tokens. Every color has a light value here and a dark value in the
+  .dark block below; components only use the Tailwind classes generated from
+  these (bg-brand, text-ink-soft, border-line, ...), never raw values.
+
+  Neutrals carry a faint tint toward the maroon brand hue (h≈10) rather than
+  a generic warm/cream tint, so the whole UI reads as one family.
 */
 :root {
-  /* Warm coral accent — the one "summer" color, used sparingly */
-  --brand: #e05d3d;
-  --brand-dark: #c24b2e;
-  --brand-soft: #fdeee9;
+  /* Maroon: the brand. Primary actions, logo, links, selection. */
+  --brand: oklch(0.41 0.13 10);
+  --brand-hover: oklch(0.35 0.12 10);
+  --brand-ink: oklch(0.41 0.13 10); /* brand-colored text on surfaces */
+  --brand-soft: oklch(0.955 0.02 10);
+  --on-brand: oklch(0.99 0.004 10);
 
-  /* Warm neutrals: off-white page, white cards, warm-gray text */
-  --surface: #faf9f7;
-  --card: #ffffff;
-  --ink: #1c1917;
-  --ink-soft: #78716c;
-  --line: #e7e5e4;
+  /* Burnt orange: a small second voice (logo detail, "new" markers). Never
+     used for body text at small sizes on light backgrounds. */
+  --accent: oklch(0.7 0.16 52);
+  --accent-ink: oklch(0.53 0.14 48);
+
+  --surface: oklch(0.987 0.003 10);
+  --sunken: oklch(0.962 0.005 10);
+  --card: oklch(1 0 0);
+  --ink: oklch(0.2 0.018 10);
+  --ink-soft: oklch(0.46 0.016 10);
+  --ink-faint: oklch(0.6 0.012 10);
+  --line: oklch(0.912 0.007 10);
+  --line-strong: oklch(0.83 0.01 10);
+
+  --danger: oklch(0.52 0.19 27);
+  --danger-soft: oklch(0.96 0.025 27);
+  --success: oklch(0.5 0.12 150);
+  --success-soft: oklch(0.96 0.03 150);
+
+  color-scheme: light;
 }
 
 .dark {
-  --brand: #e05d3d;
-  --brand-dark: #c24b2e;
-  --brand-soft: #43241c;
+  --brand: oklch(0.54 0.15 12);
+  --brand-hover: oklch(0.6 0.15 12);
+  --brand-ink: oklch(0.8 0.09 12);
+  --brand-soft: oklch(0.28 0.06 12);
+  --on-brand: oklch(0.99 0.004 10);
 
-  /* Same warm family, inverted: dark stone instead of pure black */
-  --surface: #1c1917;
-  --card: #292524;
-  --ink: #f5f5f4;
-  --ink-soft: #a8a29e;
-  --line: #44403c;
+  --accent: oklch(0.74 0.15 55);
+  --accent-ink: oklch(0.8 0.13 58);
+
+  --surface: oklch(0.17 0.01 10);
+  --sunken: oklch(0.145 0.009 10);
+  --card: oklch(0.205 0.012 10);
+  --ink: oklch(0.96 0.005 10);
+  --ink-soft: oklch(0.74 0.012 10);
+  --ink-faint: oklch(0.6 0.012 10);
+  --line: oklch(0.29 0.013 10);
+  --line-strong: oklch(0.38 0.014 10);
+
+  --danger: oklch(0.72 0.16 25);
+  --danger-soft: oklch(0.26 0.06 25);
+  --success: oklch(0.76 0.13 150);
+  --success-soft: oklch(0.25 0.04 150);
+
+  color-scheme: dark;
 }
 
-/*
-  Tell Tailwind about the tokens so it generates utility classes
-  (bg-brand, text-ink-soft, border-line, ...) that follow the
-  variables above.
-*/
 @theme inline {
   --color-brand: var(--brand);
-  --color-brand-dark: var(--brand-dark);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
   --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
   --color-card: var(--card);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+
+  /* Exponential ease-out used by every transition in the app. */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 body {
   background: var(--surface);
   color: var(--ink);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01";
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 /*
@@ -73,6 +129,36 @@ body {
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
   outline-width: 2px;
   outline-style: solid;
-  outline-color: var(--brand);
+  outline-color: var(--brand-ink);
   outline-offset: 2px;
+}
+
+/* Prices, counts and dates line up when stacked. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

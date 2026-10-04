@@ -1,67 +1,90 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight, Flag, Mail, MessageCircle } from "lucide-react";
+import { button, size } from "@/app/_components/ui";
 
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get in touch with the SummerStay team, or learn how to reach a host about a listing.",
+    "Get in touch with SummerStay, or learn how to reach a host about a listing.",
 };
 
 const SUPPORT_EMAIL = "hello@summerstay.app";
 
 export default function ContactPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 pt-12 pb-20">
-      <p className="text-sm font-medium text-brand">Support</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">Contact us</h1>
-      <p className="mt-3 max-w-2xl leading-relaxed text-ink-soft">
-        We&apos;re a small team helping students find and offer summer sublets.
-        Whether you have a question, ran into a problem, or want to report a
-        listing, here&apos;s how to reach us.
+    <div className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6 sm:pt-12">
+      <h1 className="text-3xl font-bold tracking-[-0.025em] sm:text-[2.25rem]">
+        Get in touch
+      </h1>
+      <p className="mt-2 max-w-xl text-lg leading-relaxed text-ink-soft">
+        SummerStay is run by a student in Blacksburg. Questions, bugs, or a
+        listing that looks off? Here&apos;s how to reach us.
       </p>
 
-      <div className="mt-10 space-y-4">
-        <section className="rounded-2xl border border-line bg-card p-6">
-          <h2 className="text-lg font-semibold">General questions & support</h2>
-          <p className="mt-2 leading-relaxed text-ink-soft">
-            Email us and we&apos;ll get back to you as soon as we can, usually
-            within a couple of business days.
-          </p>
-          <a
-            href={`mailto:${SUPPORT_EMAIL}`}
-            className="mt-4 inline-flex items-center rounded-full bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark"
-          >
-            {SUPPORT_EMAIL}
-          </a>
-        </section>
-
-        <section className="rounded-2xl border border-line bg-card p-6">
-          <h2 className="text-lg font-semibold">Contacting a host</h2>
-          <p className="mt-2 leading-relaxed text-ink-soft">
-            Interested in a specific place? You don&apos;t need to email us. Open
-            the listing and use the contact form on that page to message the
-            host directly.
-          </p>
-          <Link
-            href="/listings"
-            className="mt-4 inline-flex items-center rounded-full border border-line bg-card px-6 py-3 font-medium transition-colors hover:border-ink-soft"
-          >
-            Browse listings
-          </Link>
-        </section>
-
-        <section className="rounded-2xl border border-line bg-card p-6">
-          <h2 className="text-lg font-semibold">Reporting a listing</h2>
-          <p className="mt-2 leading-relaxed text-ink-soft">
-            If a listing looks inaccurate or inappropriate, let us know at{" "}
+      <div className="mt-10 divide-y divide-line border-y border-line">
+        <section className="flex gap-4 py-8">
+          <Mail
+            className="mt-0.5 size-5 shrink-0 text-ink-soft"
+            aria-hidden="true"
+          />
+          <div>
+            <h2 className="text-lg font-bold">Questions and support</h2>
+            <p className="mt-1.5 leading-relaxed text-ink-soft">
+              Email us and we&apos;ll reply as soon as we can, usually within a
+              couple of days.
+            </p>
             <a
               href={`mailto:${SUPPORT_EMAIL}`}
-              className="text-brand hover:underline"
+              className={`${button.primary} ${size.md} mt-4`}
             >
               {SUPPORT_EMAIL}
-            </a>{" "}
-            with a link to the listing, and we&apos;ll review it.
-          </p>
+            </a>
+          </div>
+        </section>
+
+        <section className="flex gap-4 py-8">
+          <MessageCircle
+            className="mt-0.5 size-5 shrink-0 text-ink-soft"
+            aria-hidden="true"
+          />
+          <div>
+            <h2 className="text-lg font-bold">Asking about a place</h2>
+            <p className="mt-1.5 leading-relaxed text-ink-soft">
+              No need to email us. Open the listing and use the message form on
+              that page.
+            </p>
+            <Link
+              href="/listings"
+              className="group mt-3 inline-flex items-center gap-1.5 font-semibold text-brand-ink"
+            >
+              Find a place
+              <ArrowRight
+                className="size-4 transition-transform duration-150 group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
+            </Link>
+          </div>
+        </section>
+
+        <section className="flex gap-4 py-8">
+          <Flag
+            className="mt-0.5 size-5 shrink-0 text-ink-soft"
+            aria-hidden="true"
+          />
+          <div>
+            <h2 className="text-lg font-bold">Reporting a listing</h2>
+            <p className="mt-1.5 leading-relaxed text-ink-soft">
+              If a listing looks inaccurate, suspicious, or inappropriate, email{" "}
+              <a
+                href={`mailto:${SUPPORT_EMAIL}?subject=Listing%20report`}
+                className="font-semibold text-brand-ink underline-offset-4 hover:underline"
+              >
+                {SUPPORT_EMAIL}
+              </a>{" "}
+              with a link to it and we&apos;ll take a look.
+            </p>
+          </div>
         </section>
       </div>
     </div>

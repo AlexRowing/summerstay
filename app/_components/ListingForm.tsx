@@ -1,22 +1,93 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Check } from "lucide-react";
 import type { HostFormState } from "@/app/host/actions";
 import type { Listing } from "@/app/_lib/listings";
 import { collectFieldErrors } from "@/app/_lib/form-validation";
+import { safeImageUrl } from "@/app/_lib/format";
+import ListingCard, { type CardData } from "@/app/_components/ListingCard";
+import {
+  button,
+  field,
+  fieldError,
+  hint,
+  label,
+  size,
+} from "@/app/_components/ui";
 
 type ListingAction = (
   prev: HostFormState,
   formData: FormData,
 ) => Promise<HostFormState>;
 
-const inputClass =
-  "mt-1 w-full rounded-lg border border-line bg-card px-3 py-2 text-sm outline-none focus:border-ink-soft";
-const labelClass = "block text-sm font-medium";
-const errorClass = "mt-1 text-sm text-red-600 dark:text-red-400";
+// One-tap amenities that cover most student places. Anything else goes in
+// the free-text "Other" field.
+const COMMON_AMENITIES = [
+  "Furnished",
+  "Wi-Fi",
+  "Air conditioning",
+  "In-unit laundry",
+  "Dishwasher",
+  "Parking",
+  "Utilities included",
+  "On the bus line",
+  "Pool",
+  "Gym",
+  "Pet friendly",
+  "Private bathroom",
+];
+
+// Quick fills for the availability field, one per academic term.
+const TERM_PRESETS = [
+  { label: "Summer", value: "May 15 - Aug 15" },
+  { label: "Fall semester", value: "Aug 20 - Dec 20" },
+  { label: "Spring semester", value: "Jan 10 - May 15" },
+  { label: "Winter break", value: "Dec 15 - Jan 15" },
+];
+
+function readDraft(form: HTMLFormElement): CardData {
+  const data = new FormData(form);
+  const text = (name: string) => String(data.get(name) ?? "").trim();
+  const num = (name: string) => {
+    const n = Number(text(name));
+    return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+  };
+  return {
+    title: text("title") || "Your listing title",
+    neighborhood: text("neighborhood") || "Neighborhood",
+    distanceToCampus: text("distanceToCampus") || "Distance to campus",
+    availability: text("availability") || "Dates",
+    bedrooms: num("bedrooms"),
+    bathrooms: num("bathrooms"),
+    pricePerMonth: num("pricePerMonth"),
+    imageUrl: safeImageUrl(text("imageUrl")),
+  };
+}
+
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <fieldset className="border-t border-line pt-8 first-of-type:border-t-0 first-of-type:pt-0">
+      <legend className="contents">
+        <span className="block text-lg font-bold">{title}</span>
+      </legend>
+      <p className="mt-1 text-[15px] text-ink-soft">{description}</p>
+      <div className="mt-6 space-y-5">{children}</div>
+    </fieldset>
+  );
+}
 
 // One form for both "create" and "edit". Pass the matching action; pass an
-// existing `listing` to prefill the fields (edit) or omit it (create).
+// existing `listing` to prefill the fields (edit) or omit it (create). A live
+// card preview beside the form shows exactly what students will see.
 export default function ListingForm({
   action,
   listing,
@@ -28,12 +99,44 @@ export default function ListingForm({
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [draft, setDraft] = useState<CardData>(() => ({
+    title: listing?.title || "Your listing title",
+    neighborhood: listing?.neighborhood || "Neighborhood",
+    distanceToCampus: listing?.distanceToCampus || "Distance to campus",
+    availability: listing?.availability || "Dates",
+    bedrooms: listing?.bedrooms ?? 0,
+    bathrooms: listing?.bathrooms ?? 0,
+    pricePerMonth: listing?.pricePerMonth ?? 0,
+    imageUrl: safeImageUrl(listing?.imageUrl ?? ""),
+  }));
+
+  const initialAmenities = listing?.amenities ?? [];
+  const [picked, setPicked] = useState<string[]>(
+    initialAmenities.filter((a) => COMMON_AMENITIES.includes(a)),
+  );
+  const [otherAmenities, setOtherAmenities] = useState(
+    initialAmenities.filter((a) => !COMMON_AMENITIES.includes(a)).join(", "),
+  );
+  const [availability, setAvailability] = useState(listing?.availability ?? "");
+
+  const amenities = [
+    ...picked,
+    ...otherAmenities
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean),
+  ].join(", ");
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     const found = collectFieldErrors(e.currentTarget);
     if (Object.keys(found).length > 0) {
       e.preventDefault();
       setErrors(found);
+      // Bring the first problem into view.
+      const first = e.currentTarget.querySelector<HTMLElement>(
+        `[name="${Object.keys(found)[0]}"]`,
+      );
+      first?.focus();
     }
   }
 
@@ -46,232 +149,327 @@ export default function ListingForm({
     });
   }
 
+  function toggleAmenity(name: string) {
+    setPicked((prev) =>
+      prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name],
+    );
+  }
+
+  // Props shared by every validated text input.
+  const bind = (name: string, fieldLabel: string) => ({
+    id: name,
+    name,
+    "data-label": fieldLabel,
+    "aria-invalid": errors[name] ? true : undefined,
+    "aria-describedby": errors[name] ? `${name}-error` : undefined,
+    onInput: () => clearError(name),
+  });
   const err = (name: string) =>
-    errors[name] ? <p className={errorClass}>{errors[name]}</p> : null;
+    errors[name] ? (
+      <p id={`${name}-error`} className={fieldError}>
+        {errors[name]}
+      </p>
+    ) : null;
 
   return (
-    <form
-      action={formAction}
-      onSubmit={handleSubmit}
-      noValidate
-      className="mt-8 space-y-5"
-    >
-      {listing && <input type="hidden" name="id" value={listing.id} />}
-
-      <div>
-        <label htmlFor="title" className={labelClass}>
-          Title
-        </label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          required
-          data-label="Title"
-          defaultValue={listing?.title}
-          placeholder="Sunny 2BR near central campus"
-          className={inputClass}
-          onInput={() => clearError("title")}
-        />
-        {err("title")}
-      </div>
-
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="city" className={labelClass}>
-            City
-          </label>
-          <input
-            id="city"
-            name="city"
-            type="text"
-            required
-            data-label="City"
-            defaultValue={listing?.city}
-            placeholder="Ann Arbor, MI"
-            className={inputClass}
-            onInput={() => clearError("city")}
-          />
-          {err("city")}
-        </div>
-        <div>
-          <label htmlFor="neighborhood" className={labelClass}>
-            Neighborhood
-          </label>
-          <input
-            id="neighborhood"
-            name="neighborhood"
-            type="text"
-            required
-            data-label="Neighborhood"
-            defaultValue={listing?.neighborhood}
-            placeholder="Kerrytown"
-            className={inputClass}
-            onInput={() => clearError("neighborhood")}
-          />
-          {err("neighborhood")}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-        <div>
-          <label htmlFor="pricePerMonth" className={labelClass}>
-            Price / month ($)
-          </label>
-          <input
-            id="pricePerMonth"
-            name="pricePerMonth"
-            type="number"
-            min="0"
-            required
-            data-label="Price"
-            defaultValue={listing?.pricePerMonth}
-            placeholder="950"
-            className={inputClass}
-            onInput={() => clearError("pricePerMonth")}
-          />
-          {err("pricePerMonth")}
-        </div>
-        <div>
-          <label htmlFor="bedrooms" className={labelClass}>
-            Bedrooms
-          </label>
-          <input
-            id="bedrooms"
-            name="bedrooms"
-            type="number"
-            min="0"
-            required
-            data-label="Bedrooms"
-            defaultValue={listing?.bedrooms}
-            placeholder="2"
-            className={inputClass}
-            onInput={() => clearError("bedrooms")}
-          />
-          {err("bedrooms")}
-        </div>
-        <div>
-          <label htmlFor="bathrooms" className={labelClass}>
-            Bathrooms
-          </label>
-          <input
-            id="bathrooms"
-            name="bathrooms"
-            type="number"
-            min="0"
-            required
-            data-label="Bathrooms"
-            defaultValue={listing?.bathrooms}
-            placeholder="1"
-            className={inputClass}
-            onInput={() => clearError("bathrooms")}
-          />
-          {err("bathrooms")}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="distanceToCampus" className={labelClass}>
-            Distance to campus
-          </label>
-          <input
-            id="distanceToCampus"
-            name="distanceToCampus"
-            type="text"
-            required
-            data-label="Distance to campus"
-            defaultValue={listing?.distanceToCampus}
-            placeholder="0.4 miles from campus"
-            className={inputClass}
-            onInput={() => clearError("distanceToCampus")}
-          />
-          {err("distanceToCampus")}
-        </div>
-        <div>
-          <label htmlFor="availability" className={labelClass}>
-            Availability
-          </label>
-          <input
-            id="availability"
-            name="availability"
-            type="text"
-            required
-            data-label="Availability"
-            defaultValue={listing?.availability}
-            placeholder="June 1 - Aug 20"
-            className={inputClass}
-            onInput={() => clearError("availability")}
-          />
-          {err("availability")}
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="description" className={labelClass}>
-          Description
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          required
-          rows={4}
-          data-label="Description"
-          defaultValue={listing?.description}
-          placeholder="Tell subletters about the place, the neighborhood, and who it's good for."
-          className={inputClass}
-          onInput={() => clearError("description")}
-        />
-        {err("description")}
-      </div>
-
-      <div>
-        <label htmlFor="amenities" className={labelClass}>
-          Amenities
-        </label>
-        <input
-          id="amenities"
-          name="amenities"
-          type="text"
-          defaultValue={listing?.amenities.join(", ")}
-          placeholder="Wi-Fi, Air conditioning, In-unit laundry"
-          className={inputClass}
-        />
-        <p className="mt-1 text-xs text-ink-soft">
-          Separate each amenity with a comma.
-        </p>
-      </div>
-
-      <div>
-        <label htmlFor="imageUrl" className={labelClass}>
-          Photo URL
-        </label>
-        <input
-          id="imageUrl"
-          name="imageUrl"
-          type="url"
-          data-label="Photo URL"
-          defaultValue={listing?.imageUrl}
-          placeholder="https://images.unsplash.com/..."
-          className={inputClass}
-          onInput={() => clearError("imageUrl")}
-        />
-        {err("imageUrl")}
-        <p className="mt-1 text-xs text-ink-soft">
-          Optional. Paste an Unsplash image URL, or leave blank for a
-          placeholder photo.
-        </p>
-      </div>
-
-      {state.error && <p className={errorClass}>{state.error}</p>}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-full bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark disabled:opacity-60"
+    <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-16">
+      <form
+        action={formAction}
+        onSubmit={handleSubmit}
+        onChange={(e) => setDraft(readDraft(e.currentTarget))}
+        noValidate
+        className="space-y-10"
       >
-        {pending ? "Saving..." : submitLabel}
-      </button>
-    </form>
+        {listing && <input type="hidden" name="id" value={listing.id} />}
+        <input type="hidden" name="amenities" value={amenities} />
+
+        <Section title="The place" description="The basics students search by.">
+          <div>
+            <label htmlFor="title" className={label}>
+              Listing title
+            </label>
+            <input
+              {...bind("title", "Title")}
+              type="text"
+              required
+              maxLength={80}
+              defaultValue={listing?.title}
+              placeholder="Sunny 2BR near the Drillfield"
+              className={field}
+            />
+            {err("title")}
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="neighborhood" className={label}>
+                Neighborhood or complex
+              </label>
+              <input
+                {...bind("neighborhood", "Neighborhood")}
+                type="text"
+                required
+                defaultValue={listing?.neighborhood}
+                placeholder="Foxridge"
+                className={field}
+              />
+              {err("neighborhood")}
+            </div>
+            <div>
+              <label htmlFor="city" className={label}>
+                City
+              </label>
+              <input
+                {...bind("city", "City")}
+                type="text"
+                required
+                defaultValue={listing?.city ?? "Blacksburg, VA"}
+                className={field}
+              />
+              {err("city")}
+            </div>
+          </div>
+          <div>
+            <label htmlFor="distanceToCampus" className={label}>
+              Distance to campus
+            </label>
+            <input
+              {...bind("distanceToCampus", "Distance to campus")}
+              type="text"
+              required
+              defaultValue={listing?.distanceToCampus}
+              placeholder="0.5 miles from campus"
+              className={field}
+            />
+            {err("distanceToCampus")}
+          </div>
+        </Section>
+
+        <Section
+          title="Dates and price"
+          description="Be specific. Clear dates get more replies."
+        >
+          <div>
+            <label htmlFor="availability" className={label}>
+              Available
+            </label>
+            <div className="mb-2.5 flex flex-wrap gap-2">
+              {TERM_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={(e) => {
+                    setAvailability(preset.value);
+                    clearError("availability");
+                    const form = e.currentTarget.form;
+                    // Let React commit the new value before reading the form.
+                    if (form)
+                      requestAnimationFrame(() => setDraft(readDraft(form)));
+                  }}
+                  className={`h-8 rounded-lg border px-3 text-sm font-medium transition-colors ${
+                    availability === preset.value
+                      ? "border-brand-ink bg-brand-soft text-brand-ink"
+                      : "border-line-strong text-ink-soft hover:border-ink-faint hover:text-ink"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <input
+              {...bind("availability", "Availability")}
+              type="text"
+              required
+              value={availability}
+              onChange={(e) => setAvailability(e.target.value)}
+              placeholder="May 15 - Aug 15"
+              className={field}
+            />
+            <p className={hint}>
+              Pick a term above, then adjust the exact dates.
+            </p>
+            {err("availability")}
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <div>
+              <label htmlFor="pricePerMonth" className={label}>
+                Rent per month
+              </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft">
+                  $
+                </span>
+                <input
+                  {...bind("pricePerMonth", "Rent")}
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  required
+                  defaultValue={listing?.pricePerMonth}
+                  placeholder="750"
+                  className={`${field} pl-7`}
+                />
+              </div>
+              {err("pricePerMonth")}
+            </div>
+            <div>
+              <label htmlFor="bedrooms" className={label}>
+                Bedrooms
+              </label>
+              <input
+                {...bind("bedrooms", "Bedrooms")}
+                type="number"
+                inputMode="numeric"
+                min="0"
+                required
+                defaultValue={listing?.bedrooms}
+                placeholder="2"
+                className={field}
+              />
+              {err("bedrooms")}
+            </div>
+            <div>
+              <label htmlFor="bathrooms" className={label}>
+                Bathrooms
+              </label>
+              <input
+                {...bind("bathrooms", "Bathrooms")}
+                type="number"
+                inputMode="numeric"
+                min="0"
+                required
+                defaultValue={listing?.bathrooms}
+                placeholder="1"
+                className={field}
+              />
+              {err("bathrooms")}
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="Details"
+          description="What would you want to know before moving in?"
+        >
+          <div>
+            <label htmlFor="description" className={label}>
+              Description
+            </label>
+            <textarea
+              {...bind("description", "Description")}
+              required
+              rows={5}
+              defaultValue={listing?.description}
+              placeholder="Who are the roommates? What's the walk to class like? Is parking included?"
+              className={`${field} resize-y`}
+            />
+            {err("description")}
+          </div>
+          <div>
+            <span className={label} id="amenities-label">
+              Amenities
+            </span>
+            <div
+              role="group"
+              aria-labelledby="amenities-label"
+              className="flex flex-wrap gap-2"
+            >
+              {COMMON_AMENITIES.map((name) => {
+                const on = picked.includes(name);
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleAmenity(name)}
+                    className={`flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors ${
+                      on
+                        ? "border-brand-ink bg-brand-soft text-brand-ink"
+                        : "border-line-strong text-ink-soft hover:border-ink-faint hover:text-ink"
+                    }`}
+                  >
+                    {on && (
+                      <Check
+                        className="size-3.5"
+                        strokeWidth={3}
+                        aria-hidden="true"
+                      />
+                    )}
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+            <label htmlFor="otherAmenities" className="sr-only">
+              Other amenities
+            </label>
+            <input
+              id="otherAmenities"
+              type="text"
+              value={otherAmenities}
+              onChange={(e) => setOtherAmenities(e.target.value)}
+              placeholder="Anything else? Separate with commas"
+              className={`${field} mt-3`}
+            />
+          </div>
+        </Section>
+
+        <Section
+          title="Photo"
+          description="Listings with a real photo get far more interest."
+        >
+          <div>
+            <label htmlFor="imageUrl" className={label}>
+              Photo URL
+            </label>
+            <input
+              {...bind("imageUrl", "Photo URL")}
+              type="url"
+              defaultValue={
+                listing?.imageUrl &&
+                listing.imageUrl === safeImageUrl(listing.imageUrl)
+                  ? listing.imageUrl
+                  : ""
+              }
+              placeholder="https://images.unsplash.com/..."
+              className={field}
+            />
+            <p className={hint}>
+              Optional for now. Paste an Unsplash image link, or leave it blank
+              and we&apos;ll use a placeholder.
+            </p>
+            {err("imageUrl")}
+          </div>
+        </Section>
+
+        <div className="border-t border-line pt-8">
+          {state.error && (
+            <p role="alert" className={`${fieldError} mb-4 text-[15px]`}>
+              {state.error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={pending}
+            className={`${button.primary} ${size.lg} w-full sm:w-auto sm:min-w-48`}
+          >
+            {pending ? "Saving…" : submitLabel}
+          </button>
+        </div>
+      </form>
+
+      <aside className="hidden lg:block" aria-label="Preview">
+        <div className="sticky top-24">
+          <p className="mb-3 text-sm font-semibold text-ink-soft">
+            How students will see it
+          </p>
+          <ListingCard listing={draft} />
+          <p className="mt-6 rounded-xl bg-sunken p-4 text-[15px] leading-relaxed text-ink-soft">
+            Tip: mention roommates, the walk or bus to campus, and whether
+            utilities are included. Those are the first questions you&apos;ll
+            get.
+          </p>
+        </div>
+      </aside>
+    </div>
   );
 }

@@ -10,11 +10,13 @@ web
 
 ## Users
 
-College students on both sides of a summer housing handoff: those who need a place near campus for the summer (internships, research, summer classes) and those who need someone to take over their lease while they're away. They arrive with a specific job in mind — find a sublet in a given town, or list their own place and field interest — often on a laptop while planning the summer, sometimes on a phone. They are not power users of real-estate tools; they want to get in, find or post a place, and get out with confidence they can trust the other side.
+Virginia Tech students on both sides of a sublease handoff in Blacksburg: those who need a place for a summer internship, a single semester, or winter break, and those who need someone to take over their lease while they're away (co-op, study abroad, going home). They mostly arrive on a phone from a GroupMe, Instagram story, or flyer link, sometimes on a laptop while planning. They are not power users of real-estate tools; they want to find or post a place quickly and trust the other side.
+
 
 ## Product Purpose
 
-SummerStay is a marketplace that connects students subletting their apartment for the summer with students who need one. It exists because the current options (group chats, Facebook groups, Craigslist) are noisy and hard to trust. Success is a student quickly finding a place near their campus, or posting their own and getting a real inquiry, without friction and without wondering whether the site is legitimate.
+SummerStay is a sublease marketplace for Blacksburg that replaces the noisy, hard-to-trust group chats and Facebook groups students use today. It covers any term, not just summer (the name is a legacy of the original scope). Success is a student quickly finding a place near campus, or posting their own and hearing from a real person, without wondering whether the site is legitimate.
+
 
 ## Brand Personality
 
@@ -22,7 +24,8 @@ Friendly and approachable, grounded in trust. SummerStay should feel like a mode
 
 ## Positioning
 
-The simple, trustworthy way for students to sublet near campus for the summer. Every screen should reinforce that this is legitimate and low-friction, student-to-student.
+Blacksburg subleases without the group chat chaos: student-to-student, any term, local to Virginia Tech (but never presented as official or affiliated). Every screen should reinforce that this is legitimate and low-friction.
+
 
 ## Anti-references
 

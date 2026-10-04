@@ -11,14 +11,13 @@ const LAST_UPDATED = "July 18, 2026";
 
 export default function TermsPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 pt-12 pb-20">
-      <p className="text-sm font-medium text-brand">Legal</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">
+    <div className="mx-auto max-w-3xl px-4 pb-20 pt-8 sm:px-6 sm:pt-12">
+      <h1 className="text-3xl font-bold tracking-[-0.025em] sm:text-[2.25rem]">
         Terms of Service
       </h1>
       <p className="mt-2 text-sm text-ink-soft">Last updated {LAST_UPDATED}</p>
 
-      <div className="mt-8 space-y-10 leading-relaxed text-ink-soft">
+      <div className="mt-10 max-w-[68ch] space-y-10 text-[17px] leading-relaxed text-ink-soft">
         <p>
           Welcome to SummerStay. These terms cover your use of our platform,
           where students post and browse summer sublets near campus. By creating
@@ -26,7 +25,7 @@ export default function TermsPage() {
         </p>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
             Who can use SummerStay
           </h2>
           <p>
@@ -39,7 +38,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
             Your listings and content
           </h2>
           <p>
@@ -66,7 +65,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
             Agreements between users
           </h2>
           <p>
@@ -87,7 +86,9 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">Acceptable use</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
+            Acceptable use
+          </h2>
           <p>When using SummerStay, you agree not to:</p>
           <ul className="ml-5 list-disc space-y-2">
             <li>Post fake, fraudulent, or duplicate listings.</li>
@@ -104,7 +105,9 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">Availability</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
+            Availability
+          </h2>
           <p>
             We work to keep SummerStay running smoothly, but we provide the
             platform &ldquo;as is&rdquo; and cannot guarantee it will always be
@@ -113,7 +116,9 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">Changes to these terms</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
+            Changes to these terms
+          </h2>
           <p>
             We may update these terms as SummerStay grows. When we do, we will
             update the &ldquo;last updated&rdquo; date above. Continuing to use
@@ -122,10 +127,15 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-ink">Contact us</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-ink">
+            Contact us
+          </h2>
           <p>
             Questions about these terms? Reach us through our{" "}
-            <Link href="/contact" className="text-brand hover:underline">
+            <Link
+              href="/contact"
+              className="font-semibold text-brand-ink underline-offset-4 hover:underline"
+            >
               contact page
             </Link>
             .

@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
+import AuthShell from "@/app/_components/AuthShell";
 import SignupForm from "@/app/_components/SignupForm";
 
 export const metadata: Metadata = { title: "Sign up" };
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+
   return (
-    <div className="mx-auto flex max-w-sm flex-col justify-center px-6 py-16">
-      <div className="rounded-2xl border border-line bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Create your account
-        </h1>
-        <p className="mt-1 text-sm text-ink-soft">
-          Sign up to post a place or contact a host.
-        </p>
-        <SignupForm />
-      </div>
-    </div>
+    <AuthShell
+      title="Create your account"
+      subtitle="You need one to post a place. Browsing and messaging hosts is open to everyone."
+    >
+      <SignupForm next={next} />
+    </AuthShell>
   );
 }
