@@ -37,10 +37,7 @@ model Listing {
   // listings disappear for everyone except the owner and admins.
   removedAt        DateTime?
   description      String
-  // Stored as a JSON string and parsed in app/_lib/listings.ts. Kept as-is
-  // through the SQLite->Postgres migration to keep the schema identical; a
-  // later change can switch this to a native Postgres text[] array.
-  amenities        String
+  amenities        String[] @default([])
   // The cover photo (always photos[0] when photos exist). Kept as its own
   // column so cards and older rows keep working.
   imageUrl         String
@@ -67,6 +64,9 @@ model User {
   listings     Listing[]
   // A Virginia Tech address the user proved they own (can differ from the
   // login email). Set together with vtVerifiedAt; drives the verified badge.
+  // Bumped on password reset so sessions on other devices end (the JWT
+  // carries the version it was issued with; see auth.ts).
+  sessionVersion Int     @default(0)
   vtEmail      String?   @unique
   vtVerifiedAt DateTime?
   emailTokens  EmailToken[]
@@ -182,4 +182,14 @@ model Inquiry {
   createdAt DateTime @default(now())
   // When the host first saw it in their inbox; null means unread.
   readAt    DateTime?
+}
+
+// Failed logins, for throttling password guessing. Old rows are pruned as
+// new ones are written.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
 }

@@ -85,7 +85,12 @@ function HeroCollage({ listings }: { listings: Listing[] }) {
   );
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ account?: string }>;
+}) {
+  const { account } = await searchParams;
   const session = await auth();
   const loggedIn = Boolean(session?.user?.id);
   const [featured, neighborhoods, total, savedIds] = await Promise.all([
@@ -102,6 +107,17 @@ export default async function Home() {
 
   return (
     <div>
+      {account === "deleted" && (
+        <p
+          role="status"
+          className="mx-auto mt-6 max-w-6xl px-4 text-[15px] sm:px-6"
+        >
+          <span className="block rounded-xl bg-sunken px-4 py-3">
+            Your account and everything in it has been deleted. Thanks for
+            trying SummerStay.
+          </span>
+        </p>
+      )}
       {/* Hero: the headline and the search bar do the work; real listings
           sit beside them on wide screens. */}
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:pb-24 lg:pt-20 xl:grid-cols-[1.1fr_1fr]">

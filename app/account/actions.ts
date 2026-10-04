@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import bcrypt from "bcryptjs";
+import { after } from "next/server";
+import { del } from "@vercel/blob";
+import { auth, signOut } from "@/auth";
 import { prisma } from "@/app/_lib/db";
 import { emailConfigured, sendVerifyEmail } from "@/app/_lib/email";
 import { alertHref, isTerm } from "@/app/_lib/format";
@@ -174,4 +177,53 @@ export async function deleteSearchAlert(formData: FormData): Promise<void> {
     where: { id: String(formData.get("id") ?? ""), userId },
   });
   revalidatePath("/account/saved");
+}
+
+export type DeleteAccountState = { error?: string };
+
+// Permanently delete the signed-in account: its listings (and their photos,
+// messages, and inquiries), conversations, saved places, and alerts. Needs
+// the current password so a borrowed laptop can't do it.
+export async function deleteAccount(
+  _prev: DeleteAccountState,
+  formData: FormData,
+): Promise<DeleteAccountState> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return { error: "Log in first." };
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { listings: { select: { photos: true } } },
+  });
+  if (!user) return { error: "That account no longer exists." };
+
+  const password = String(formData.get("password") ?? "");
+  if (!(await bcrypt.compare(password, user.passwordHash))) {
+    return { error: "That password isn't right." };
+  }
+
+  // Listings don't cascade from users (sample listings have no owner), so
+  // remove them first; everything else cascades from the user row.
+  await prisma.$transaction([
+    prisma.listing.deleteMany({ where: { ownerId: userId } }),
+    prisma.user.delete({ where: { id: userId } }),
+  ]);
+
+  const blobs = user.listings
+    .flatMap((l) => l.photos)
+    .filter((url) => url.includes(".blob.vercel-storage.com/"));
+  if (blobs.length > 0) {
+    after(async () => {
+      try {
+        await del(blobs);
+      } catch (error) {
+        console.error("Couldn't delete photos for a deleted account:", error);
+      }
+    });
+  }
+
+  revalidatePath("/", "layout");
+  await signOut({ redirectTo: "/?account=deleted" });
+  return {};
 }

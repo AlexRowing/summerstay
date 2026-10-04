@@ -46,6 +46,12 @@ export default function SignupForm({ next }: { next?: string }) {
       className="mt-8 space-y-5"
     >
       {next && <input type="hidden" name="next" value={next} />}
+      <div
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-px w-px overflow-hidden"
+      >
+        <input name="website" type="text" tabIndex={-1} autoComplete="off" />
+      </div>
       <div>
         <label htmlFor="name" className={label}>
           Name

@@ -5,6 +5,7 @@ import { prisma } from "@/app/_lib/db";
 import { countAllUnread } from "@/app/_lib/messages";
 import { signOutAction } from "@/app/_lib/auth-actions";
 import AccountNav from "@/app/account/AccountNav";
+import DeleteAccount from "@/app/account/DeleteAccount";
 import VtVerifyCard from "@/app/account/VtVerifyCard";
 import VerifiedBadge from "@/app/_components/VerifiedBadge";
 import { button, size } from "@/app/_components/ui";
@@ -94,6 +95,8 @@ export default async function AccountPage({
           Log out
         </button>
       </form>
+
+      <DeleteAccount listingCount={user._count.listings} />
     </div>
   );
 }

@@ -10,8 +10,7 @@ const prisma = new PrismaClient({ adapter });
 
 // Sample Blacksburg listings so a fresh database isn't empty. They have no
 // owner, so the site labels them "Sample listing" and doesn't take messages
-// for them. `amenities` is stored as a JSON string; app/_lib/listings.ts
-// parses it back to an array. `createdAt` is set explicitly and increasing
+// for them. `createdAt` is set explicitly and increasing
 // so newest-first ordering is stable across seeds.
 const base = new Date("2026-02-01T05:00:00Z").getTime();
 
@@ -197,10 +196,8 @@ const seedListings = [
 
 async function main() {
   for (const [index, listing] of seedListings.entries()) {
-    const { amenities, ...rest } = listing;
     const data = {
-      ...rest,
-      amenities: JSON.stringify(amenities),
+      ...listing,
       createdAt: new Date(base + index * 60_000),
     };
     // upsert = create it, or overwrite it if this id already exists, so

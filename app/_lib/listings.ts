@@ -37,8 +37,8 @@ export type Listing = {
 const withOwner = { owner: { select: { vtVerifiedAt: true } } } as const;
 type Row = ListingRow & { owner?: { vtVerifiedAt: Date | null } | null };
 
-// The one place that translates a raw database row into a Listing. The DB
-// stores amenities as a JSON string, so we parse it back into an array here.
+// The one place that translates a raw database row into a Listing. Photos
+// fall back to the single cover image for older listings.
 function toListing(row: Row): Listing {
   return {
     id: row.id,
@@ -57,7 +57,7 @@ function toListing(row: Row): Listing {
     isTaken: row.isTaken,
     removedAt: row.removedAt,
     description: row.description,
-    amenities: JSON.parse(row.amenities) as string[],
+    amenities: row.amenities,
     imageUrl: row.imageUrl,
     photos: row.photos.length > 0 ? row.photos : [row.imageUrl],
     ownerId: row.ownerId,

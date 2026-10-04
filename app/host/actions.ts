@@ -33,7 +33,7 @@ type ListingFields = {
   startDate: Date;
   endDate: Date;
   description: string;
-  amenities: string;
+  amenities: string[];
   imageUrl: string;
   photos: string[];
   lat: number | null;
@@ -147,7 +147,7 @@ function readListingFields(
       startDate,
       endDate,
       description,
-      amenities: JSON.stringify(amenities),
+      amenities: amenities.slice(0, 30).map((a) => a.slice(0, 60)),
       imageUrl: photos[0] ?? PLACEHOLDER_IMAGE,
       photos,
       lat: hasPin ? lat : null,

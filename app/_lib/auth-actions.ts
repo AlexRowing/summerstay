@@ -40,15 +40,40 @@ export async function authenticate(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+
+  // Slow down password guessing: 8 failed tries per email per 15 minutes.
+  const windowStart = new Date(Date.now() - 15 * 60 * 1000);
+  const failures = await prisma.loginAttempt.count({
+    where: { email, createdAt: { gte: windowStart } },
+  });
+  if (failures >= 8) {
+    return {
+      error:
+        "Too many attempts. Wait 15 minutes, or reset your password if you've forgotten it.",
+    };
+  }
+
   try {
     await signIn("credentials", {
-      email: String(formData.get("email") ?? ""),
+      email,
       password: String(formData.get("password") ?? ""),
       redirectTo: safeNext(formData),
     });
     return {};
   } catch (error) {
     if (error instanceof AuthError) {
+      await prisma.$transaction([
+        prisma.loginAttempt.create({ data: { email } }),
+        // Keep the table small: drop anything older than a day.
+        prisma.loginAttempt.deleteMany({
+          where: {
+            createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          },
+        }),
+      ]);
       return { error: "Invalid email or password." };
     }
     throw error;
@@ -60,7 +85,14 @@ export async function register(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const name = String(formData.get("name") ?? "").trim();
+  // Honeypot field real people never see; bots that fill it get nowhere.
+  if (String(formData.get("website") ?? "") !== "") {
+    return { error: "Something went wrong. Please try again." };
+  }
+
+  const name = String(formData.get("name") ?? "")
+    .trim()
+    .slice(0, 80);
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -144,9 +176,15 @@ export async function resetPassword(
     };
   }
 
+  // New password, and every existing session (other devices, or whoever
+  // knew the old password) gets signed out.
   await prisma.user.update({
     where: { id: row.userId },
-    data: { passwordHash: await bcrypt.hash(password, 10) },
+    data: {
+      passwordHash: await bcrypt.hash(password, 10),
+      sessionVersion: { increment: 1 },
+    },
   });
+  await prisma.loginAttempt.deleteMany({ where: { email: row.email } });
   redirect("/login?reset=1");
 }

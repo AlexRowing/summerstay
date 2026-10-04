@@ -40,7 +40,8 @@ export async function generateMetadata({
 }) {
   const { id } = await params;
   const listing = await getListingById(id);
-  if (!listing) return { title: "Listing not found" };
+  // Taken-down listings 404 for the public, so don't leak their title.
+  if (!listing || listing.removedAt) return { title: "Listing not found" };
   return {
     title: listing.title,
     description: `${formatPrice(listing.pricePerMonth)}/mo · ${listing.bedrooms} bd · ${listing.neighborhood}, ${listing.city} · ${listing.availability}`,
